@@ -176,10 +176,8 @@ def entity_unit(hass: HomeAssistant, entity_id: str) -> str | None:
 def validate_sensors(
     hass: HomeAssistant, user_input: Mapping[str, Any]
 ) -> tuple[dict[str, str], dict[str, str]]:
-    """Return the selected mapping and errors (no_sensors, invalid_unit)."""
+    """Return the selected mapping and unit errors; an empty mapping is valid."""
     sensors = {key: str(value) for key, value in user_input.items() if value}
-    if not sensors:
-        return sensors, {"base": "no_sensors"}
     errors = {
         key: "invalid_unit"
         for key, entity_id in sensors.items()

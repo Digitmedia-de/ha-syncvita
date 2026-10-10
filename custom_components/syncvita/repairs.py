@@ -114,8 +114,6 @@ class MissingSensorRepairFlow(RepairsFlow):
             if replacement := user_input.get(key):
                 checked, errors = validate_sensors(self.hass, {key: replacement})
                 sensors.update(checked)
-            elif not sensors:
-                errors = {"base": "no_sensors"}
             if not errors:
                 self.hass.config_entries.async_update_entry(
                     entry, options={**entry.options, CONF_SENSORS: sensors}

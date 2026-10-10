@@ -105,12 +105,13 @@ async def test_fix_flow_can_drop_measure(
     assert "hydration" not in mock_config_entry.options[CONF_SENSORS]
 
 
-async def test_fix_flow_keeps_last_sensor(hass: HomeAssistant) -> None:
+async def test_fix_flow_removes_last_sensor(hass: HomeAssistant) -> None:
     entry = make_entry(**{CONF_SENSORS: {"hydration": "sensor.water"}})
     await setup_integration(hass, entry)
     flow = await _fix_flow(hass, entry, "hydration")
     result = await flow.async_step_init({})
-    assert result["errors"] == {"base": "no_sensors"}
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert entry.options[CONF_SENSORS] == {}
 
 
 async def test_fix_flow_entry_removed(

@@ -25,7 +25,7 @@ Diese Integration sendet neue Messwerte aus Home Assistant (z. B. Waage, Pulsoxi
 
 1. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Syncvita**.
 2. Name der Person und API-Key eingeben. Der Key wird über `GET /stats` geprüft.
-3. Pro Messart einen Sensor wählen (mindestens einen). Sensoren mit falscher Einheit werden abgelehnt; Syncvita-eigene Sensoren werden nicht angeboten, damit keine Kreisläufe entstehen.
+3. Optional pro Messart einen Sensor wählen. Bleiben alle Felder leer, sendest du Werte nur über die Aktion `syncvita.send_value` (z. B. aus Automatisierungen). Sensoren mit falscher Einheit werden abgelehnt; Syncvita-eigene Sensoren werden nicht angeboten, damit keine Kreisläufe entstehen.
 
 Für eine zweite Person die Integration einfach noch einmal hinzufügen.
 

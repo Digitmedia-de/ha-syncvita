@@ -15,7 +15,7 @@
       },
       "sensors": {
         "title": "Sensors",
-        "description": "Choose which sensors send their new values to Syncvita. Select at least one.",
+        "description": "Choose which sensors send their new values to Syncvita automatically. Leave all empty to send values only via the syncvita.send_value action, e.g. from automations.",
         "data": {
           "weight": "Weight",
           "body_fat": "Body fat",
@@ -57,8 +57,7 @@
       "invalid_auth": "The API key is invalid.",
       "cannot_connect": "Syncvita cannot be reached.",
       "unknown": "Unexpected error.",
-      "invalid_unit": "This sensor has an unsupported unit.",
-      "no_sensors": "Select at least one sensor."
+      "invalid_unit": "This sensor has an unsupported unit."
     },
     "abort": {
       "already_configured": "This API key is already set up.",
@@ -77,7 +76,7 @@
       },
       "sensors": {
         "title": "Sensors",
-        "description": "Choose which sensors send their new values to Syncvita. Select at least one.",
+        "description": "Choose which sensors send their new values to Syncvita automatically. Leave all empty to send values only via the syncvita.send_value action, e.g. from automations.",
         "data": {
           "weight": "Weight",
           "body_fat": "Body fat",
@@ -109,8 +108,7 @@
       }
     },
     "error": {
-      "invalid_unit": "This sensor has an unsupported unit.",
-      "no_sensors": "Select at least one sensor."
+      "invalid_unit": "This sensor has an unsupported unit."
     }
   },
   "entity": {
@@ -225,8 +223,7 @@
           }
         },
         "error": {
-          "invalid_unit": "This sensor has an unsupported unit.",
-          "no_sensors": "At least one sensor must stay selected."
+          "invalid_unit": "This sensor has an unsupported unit."
         },
         "abort": {
           "entry_removed": "The Syncvita entry no longer exists."

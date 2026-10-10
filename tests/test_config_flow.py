@@ -208,7 +208,8 @@ async def test_already_configured(hass: HomeAssistant) -> None:
 async def test_no_sensor_selected(hass: HomeAssistant) -> None:
     result = await _to_sensor_step(hass)
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    assert result["errors"] == {"base": "no_sensors"}
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["options"][CONF_SENSORS] == {}
 
 
 @pytest.mark.usefixtures("valid_key")

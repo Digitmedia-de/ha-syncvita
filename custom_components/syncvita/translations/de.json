@@ -15,7 +15,7 @@
       },
       "sensors": {
         "title": "Sensoren",
-        "description": "Wähle, welche Sensoren ihre neuen Werte an Syncvita senden. Mindestens einer ist nötig.",
+        "description": "Wähle, welche Sensoren ihre neuen Werte automatisch an Syncvita senden. Lass alle Felder leer, wenn du Werte nur über die Aktion syncvita.send_value sendest, z. B. aus Automatisierungen.",
         "data": {
           "weight": "Gewicht",
           "body_fat": "Körperfett",
@@ -57,8 +57,7 @@
       "invalid_auth": "Der API-Key ist ungültig.",
       "cannot_connect": "Syncvita ist nicht erreichbar.",
       "unknown": "Unerwarteter Fehler.",
-      "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit.",
-      "no_sensors": "Wähle mindestens einen Sensor."
+      "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit."
     },
     "abort": {
       "already_configured": "Dieser API-Key ist bereits eingerichtet.",
@@ -77,7 +76,7 @@
       },
       "sensors": {
         "title": "Sensoren",
-        "description": "Wähle, welche Sensoren ihre neuen Werte an Syncvita senden. Mindestens einer ist nötig.",
+        "description": "Wähle, welche Sensoren ihre neuen Werte automatisch an Syncvita senden. Lass alle Felder leer, wenn du Werte nur über die Aktion syncvita.send_value sendest, z. B. aus Automatisierungen.",
         "data": {
           "weight": "Gewicht",
           "body_fat": "Körperfett",
@@ -109,8 +108,7 @@
       }
     },
     "error": {
-      "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit.",
-      "no_sensors": "Wähle mindestens einen Sensor."
+      "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit."
     }
   },
   "entity": {
@@ -225,8 +223,7 @@
           }
         },
         "error": {
-          "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit.",
-          "no_sensors": "Mindestens ein Sensor muss ausgewählt bleiben."
+          "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit."
         },
         "abort": {
           "entry_removed": "Der Syncvita-Eintrag existiert nicht mehr."
