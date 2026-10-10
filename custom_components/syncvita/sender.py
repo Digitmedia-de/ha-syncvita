@@ -179,12 +179,14 @@ class SyncvitaSender:
             if not self._store.queue:
                 async_dispatcher_send(self._hass, self.signal)
                 return
-            if self._rate_limited():
-                self._async_schedule_rate_limit_resume()
-                return
             rejected = False
             failed = 0
             while self._store.queue:
+                # Checked per chunk: each /bulk response updates the rate limit.
+                if self._rate_limited():
+                    self._async_schedule_rate_limit_resume()
+                    async_dispatcher_send(self._hass, self.signal)
+                    return
                 chunk = self._store.queue[:BULK_CHUNK_SIZE]
                 try:
                     failed += (await self._async_post_chunk(chunk)).count(False)

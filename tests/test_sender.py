@@ -497,6 +497,40 @@ async def test_queue_is_sent_in_chunks_of_100(
     assert mock_config_entry.runtime_data.store.sent_count == 150
 
 
+async def test_queue_pauses_when_rate_limit_drops(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    hass_storage: dict[str, Any],
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    freezer.move_to("2026-10-10 10:00:00+00:00")
+    entries = [
+        _queued(f"k{index}", "2026-10-10T08:00:00+00:00", 80 + index / 100)
+        for index in range(150)
+    ]
+    hass_storage[f"{DOMAIN}.{mock_config_entry.entry_id}"] = _stored_queue(
+        mock_config_entry, *entries
+    )
+    reset = dt_util.utcnow() + timedelta(minutes=10)
+    aioclient_mock.post(
+        f"{API}/bulk",
+        status=201,
+        json=OK,
+        headers={
+            "X-RateLimit-Remaining": "2",
+            "X-RateLimit-Reset": str(int(reset.timestamp())),
+        },
+    )
+    await setup_integration(hass, mock_config_entry)
+    assert aioclient_mock.call_count == 1
+    assert len(mock_config_entry.runtime_data.store.queue) == 50
+
+    await _tick(hass, freezer, 601)
+    assert aioclient_mock.call_count == 2
+    assert mock_config_entry.runtime_data.store.queue == []
+
+
 async def test_send_bulk_directly(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,
