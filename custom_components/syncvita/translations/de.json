@@ -1,0 +1,295 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Syncvita-Konto",
+        "description": "Lege einen Eintrag pro Person an. Den API-Key findest du in der Syncvita-App.",
+        "data": {
+          "name": "Name der Person",
+          "api_key": "API-Key"
+        },
+        "data_description": {
+          "name": "Wird zum Titel dieses Eintrags, z. B. Tim.",
+          "api_key": "Persönlicher Syncvita-API-Key dieser Person."
+        }
+      },
+      "sensors": {
+        "title": "Sensoren",
+        "description": "Wähle, welche Sensoren ihre neuen Werte an Syncvita senden. Mindestens einer ist nötig.",
+        "data": {
+          "weight": "Gewicht",
+          "body_fat": "Körperfett",
+          "heart_rate": "Herzfrequenz",
+          "blood_oxygen": "Blutsauerstoff",
+          "blood_sugar": "Blutzucker",
+          "hydration": "Trinkmenge"
+        },
+        "data_description": {
+          "weight": "Geräteklasse Gewicht, Einheit kg, g oder lb.",
+          "body_fat": "Einheit %.",
+          "heart_rate": "Einheit bpm.",
+          "blood_oxygen": "Einheit %.",
+          "blood_sugar": "Einheit mg/dL oder mmol/L.",
+          "hydration": "Einheit mL oder L."
+        }
+      },
+      "sensors_confirm": {
+        "title": "Sensoren schon in Verwendung",
+        "description": "Diese Sensoren senden bereits an einen anderen Syncvita-Eintrag: {entities}. Ihre Werte gehen dann an beide Personen. Trotzdem fortfahren?"
+      },
+      "reauth_confirm": {
+        "title": "API-Key neu eingeben",
+        "description": "Der API-Key von {name} ist nicht mehr gültig.",
+        "data": {
+          "api_key": "API-Key"
+        }
+      },
+      "reconfigure": {
+        "title": "Syncvita-Konto ändern",
+        "description": "Lass den API-Key leer, um den bisherigen zu behalten.",
+        "data": {
+          "name": "Name der Person",
+          "api_key": "API-Key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Der API-Key ist ungültig.",
+      "cannot_connect": "Syncvita ist nicht erreichbar.",
+      "unknown": "Unerwarteter Fehler.",
+      "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit.",
+      "no_sensors": "Wähle mindestens einen Sensor."
+    },
+    "abort": {
+      "already_configured": "Dieser API-Key ist bereits eingerichtet.",
+      "reauth_successful": "Der API-Key wurde aktualisiert.",
+      "reconfigure_successful": "Der Eintrag wurde aktualisiert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "menu_options": {
+          "sensors": "Sensoren",
+          "sending": "Senden",
+          "export": "Apple-Health-Export"
+        }
+      },
+      "sensors": {
+        "title": "Sensoren",
+        "description": "Wähle, welche Sensoren ihre neuen Werte an Syncvita senden. Mindestens einer ist nötig.",
+        "data": {
+          "weight": "Gewicht",
+          "body_fat": "Körperfett",
+          "heart_rate": "Herzfrequenz",
+          "blood_oxygen": "Blutsauerstoff",
+          "blood_sugar": "Blutzucker",
+          "hydration": "Trinkmenge"
+        }
+      },
+      "sensors_confirm": {
+        "title": "Sensoren schon in Verwendung",
+        "description": "Diese Sensoren senden bereits an einen anderen Syncvita-Eintrag: {entities}. Ihre Werte gehen dann an beide Personen. Trotzdem fortfahren?"
+      },
+      "sending": {
+        "title": "Senden",
+        "data": {
+          "notify_errors": "Bei Fehlern Benachrichtigung anzeigen",
+          "max_age_hours": "Werte in der Warteschlange nicht mehr senden, wenn älter als"
+        }
+      },
+      "export": {
+        "title": "Apple-Health-Export",
+        "data": {
+          "read_enabled": "Apple-Health-Export lesen",
+          "scan_interval": "Abfrageintervall",
+          "sleep_enabled": "Schlaf",
+          "workouts_enabled": "Workouts"
+        }
+      }
+    },
+    "error": {
+      "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit.",
+      "no_sensors": "Wähle mindestens einen Sensor."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "export_active": {
+        "name": "Export aktiv",
+        "state_attributes": {
+          "released_types": {
+            "name": "Freigegebene Typen"
+          }
+        }
+      }
+    },
+    "button": {
+      "process_queue": {
+        "name": "Warteschlange jetzt senden"
+      }
+    },
+    "event": {
+      "workout": {
+        "name": "Workout",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "workout_finished": "Workout beendet"
+            }
+          }
+        }
+      },
+      "sleep": {
+        "name": "Schlaf",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "sleep_recorded": "Schlaf erfasst"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "last_transfer": { "name": "Letzte Übertragung" },
+      "sent_values": { "name": "Gesendete Werte" },
+      "queue": { "name": "Warteschlange" },
+      "last_error": { "name": "Letzter Fehler" },
+      "rate_limit_remaining": { "name": "Verbleibende API-Anfragen" },
+      "last_upload": { "name": "Letzter Upload aus Apple Health" },
+      "stored_values": { "name": "Gespeicherte Exportwerte" },
+      "sleep_last_night": { "name": "Schlaf letzte Nacht" },
+      "last_workout": { "name": "Letztes Workout" },
+      "workouts_today": { "name": "Workouts heute" },
+      "active_energy_burned": { "name": "Aktive Energie heute" },
+      "basal_energy_burned": { "name": "Ruheenergie heute" },
+      "blood_glucose": { "name": "Blutzucker letzter Wert" },
+      "body_fat_percentage": { "name": "Körperfett letzter Wert" },
+      "body_mass": { "name": "Gewicht letzter Wert" },
+      "body_mass_index": { "name": "BMI letzter Wert" },
+      "body_temperature": { "name": "Körpertemperatur letzter Wert" },
+      "dietary_caffeine": { "name": "Koffein heute" },
+      "dietary_carbohydrates": { "name": "Kohlenhydrate heute" },
+      "dietary_energy": { "name": "Nahrungsenergie heute" },
+      "dietary_fat_total": { "name": "Fett heute" },
+      "dietary_protein": { "name": "Protein heute" },
+      "dietary_water": { "name": "Wasser heute" },
+      "distance_walking_running": { "name": "Geh- und Laufdistanz heute" },
+      "exercise_time": { "name": "Trainingszeit heute" },
+      "flights_climbed": { "name": "Etagen heute" },
+      "heart_rate": { "name": "Herzfrequenz letzter Wert" },
+      "heart_rate_recovery": { "name": "Herzfrequenzerholung letzter Wert" },
+      "heart_rate_variability_sdnn": { "name": "HRV letzter Wert" },
+      "height": { "name": "Größe letzter Wert" },
+      "oxygen_saturation": { "name": "Sauerstoffsättigung letzter Wert" },
+      "respiratory_rate": { "name": "Atemfrequenz letzter Wert" },
+      "resting_heart_rate": { "name": "Ruhepuls letzter Wert" },
+      "stand_time": { "name": "Stehzeit heute" },
+      "step_count": { "name": "Schritte heute" },
+      "time_in_daylight": { "name": "Zeit im Tageslicht heute" },
+      "vo2_max": { "name": "VO2max letzter Wert" },
+      "walking_heart_rate_average": { "name": "Gehpuls letzter Wert" },
+      "walking_speed": { "name": "Gehgeschwindigkeit letzter Wert" },
+      "walking_steadiness": { "name": "Gehstabilität letzter Wert" },
+      "wrist_temperature": { "name": "Handgelenktemperatur letzter Wert" }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "Der Syncvita-Eintrag ist nicht geladen."
+    },
+    "out_of_range": {
+      "message": "Der Wert {value} liegt außerhalb des erlaubten Bereichs für {measure}."
+    },
+    "send_failed": {
+      "message": "Senden an Syncvita fehlgeschlagen: {error}"
+    }
+  },
+  "issues": {
+    "missing_sensor": {
+      "title": "Syncvita-Sensor von {name} fehlt",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Ersatz wählen",
+            "description": "{entity_id} existiert nicht mehr. Wähle einen Ersatz-Sensor oder lass das Feld leer, um diese Messart nicht mehr zu senden.",
+            "data": {
+              "weight": "Gewicht",
+              "body_fat": "Körperfett",
+              "heart_rate": "Herzfrequenz",
+              "blood_oxygen": "Blutsauerstoff",
+              "blood_sugar": "Blutzucker",
+              "hydration": "Trinkmenge"
+            }
+          }
+        },
+        "error": {
+          "invalid_unit": "Dieser Sensor hat eine nicht unterstützte Einheit.",
+          "no_sensors": "Mindestens ein Sensor muss ausgewählt bleiben."
+        },
+        "abort": {
+          "entry_removed": "Der Syncvita-Eintrag existiert nicht mehr."
+        }
+      }
+    },
+    "expired_entries": {
+      "title": "Syncvita hat alte Werte von {name} verworfen",
+      "description": "{count} Werte aus der Warteschlange vom {oldest} bis {newest} waren älter als das eingestellte Höchstalter und wurden nicht gesendet. Mit der Aktion syncvita.backfill kannst du sie später nachsenden."
+    }
+  },
+  "selector": {
+    "measure": {
+      "options": {
+        "weight": "Gewicht",
+        "body_fat": "Körperfett",
+        "heart_rate": "Herzfrequenz",
+        "blood_oxygen": "Blutsauerstoff",
+        "blood_sugar": "Blutzucker",
+        "hydration": "Trinkmenge"
+      }
+    }
+  },
+  "services": {
+    "send_value": {
+      "name": "Wert senden",
+      "description": "Sendet einen einzelnen Wert an Syncvita, für manuelle Einträge oder Tests.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Person",
+          "description": "Der Syncvita-Eintrag, an den gesendet wird."
+        },
+        "measure": {
+          "name": "Messart",
+          "description": "Art des Werts."
+        },
+        "value": {
+          "name": "Wert",
+          "description": "Wert in kg, %, bpm, mg/dL oder mL."
+        },
+        "measured_at": {
+          "name": "Messzeitpunkt",
+          "description": "Zeitpunkt der Messung. Standard ist jetzt."
+        }
+      }
+    },
+    "backfill": {
+      "name": "Nachholen",
+      "description": "Liest die Historie der zugeordneten Sensoren aus dem Recorder und sendet Werte, die noch nicht gesendet wurden.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Person",
+          "description": "Der Syncvita-Eintrag, an den gesendet wird."
+        },
+        "start": {
+          "name": "Startdatum",
+          "description": "Erster Tag, der aus der Historie gelesen wird."
+        },
+        "measures": {
+          "name": "Messarten",
+          "description": "Nur diese Messarten. Standard sind alle zugeordneten."
+        }
+      }
+    }
+  }
+}

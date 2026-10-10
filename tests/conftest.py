@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from unittest.mock import AsyncMock, patch
 
 from homeassistant.const import CONF_API_KEY, CONF_NAME
 import pytest
@@ -22,7 +23,12 @@ from custom_components.syncvita.const import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from homeassistant.core import HomeAssistant
+    from pytest_homeassistant_custom_component.test_util.aiohttp import (
+        AiohttpClientMocker,
+    )
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
@@ -100,3 +106,34 @@ def source_states(hass: HomeAssistant) -> None:
     """Initial states of the mapped source sensors (sensor.water stays missing)."""
     hass.states.async_set("sensor.scale_weight", "80.0", WEIGHT_ATTRS)
     hass.states.async_set("sensor.scale_fat", "20.0", FAT_ATTRS)
+
+
+@pytest.fixture
+def mock_setup_entry() -> Generator[AsyncMock]:
+    """Skip the real setup when a flow creates or reloads an entry."""
+    with patch(
+        "custom_components.syncvita.async_setup_entry", return_value=True
+    ) as mock:
+        yield mock
+
+
+@pytest.fixture
+def flow_sensors(hass: HomeAssistant) -> None:
+    """Candidate sensors for the sensor step."""
+    hass.states.async_set("sensor.scale_weight", "80.0", WEIGHT_ATTRS)
+    hass.states.async_set("sensor.scale_fat", "20.0", FAT_ATTRS)
+    hass.states.async_set(
+        "sensor.scale_stone",
+        "12.6",
+        {"unit_of_measurement": "st", "device_class": "weight"},
+    )
+
+
+@pytest.fixture
+def valid_key(aioclient_mock: AiohttpClientMocker) -> None:
+    """A key that passes /stats with the export enabled."""
+    aioclient_mock.get(f"{API}/stats", json={"success": True, "data": {}})
+    aioclient_mock.get(
+        f"{API}/health-export/settings",
+        json={"success": True, "data": {"enabled": True, "types": []}},
+    )

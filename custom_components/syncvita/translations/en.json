@@ -1,0 +1,295 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Syncvita account",
+        "description": "Add one entry per person. You find the API key in the Syncvita app.",
+        "data": {
+          "name": "Name of the person",
+          "api_key": "API key"
+        },
+        "data_description": {
+          "name": "Used as the title of this entry, e.g. Tim.",
+          "api_key": "Personal Syncvita API key of this person."
+        }
+      },
+      "sensors": {
+        "title": "Sensors",
+        "description": "Choose which sensors send their new values to Syncvita. Select at least one.",
+        "data": {
+          "weight": "Weight",
+          "body_fat": "Body fat",
+          "heart_rate": "Heart rate",
+          "blood_oxygen": "Blood oxygen",
+          "blood_sugar": "Blood sugar",
+          "hydration": "Hydration"
+        },
+        "data_description": {
+          "weight": "Device class weight, unit kg, g or lb.",
+          "body_fat": "Unit %.",
+          "heart_rate": "Unit bpm.",
+          "blood_oxygen": "Unit %.",
+          "blood_sugar": "Unit mg/dL or mmol/L.",
+          "hydration": "Unit mL or L."
+        }
+      },
+      "sensors_confirm": {
+        "title": "Sensors already in use",
+        "description": "These sensors already send to another Syncvita entry: {entities}. Their values will be sent to both people. Continue anyway?"
+      },
+      "reauth_confirm": {
+        "title": "Re-enter the API key",
+        "description": "The API key of {name} is no longer valid.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Change Syncvita account",
+        "description": "Leave the API key empty to keep the current one.",
+        "data": {
+          "name": "Name of the person",
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The API key is invalid.",
+      "cannot_connect": "Syncvita cannot be reached.",
+      "unknown": "Unexpected error.",
+      "invalid_unit": "This sensor has an unsupported unit.",
+      "no_sensors": "Select at least one sensor."
+    },
+    "abort": {
+      "already_configured": "This API key is already set up.",
+      "reauth_successful": "The API key was updated.",
+      "reconfigure_successful": "The entry was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "menu_options": {
+          "sensors": "Sensors",
+          "sending": "Sending",
+          "export": "Apple Health export"
+        }
+      },
+      "sensors": {
+        "title": "Sensors",
+        "description": "Choose which sensors send their new values to Syncvita. Select at least one.",
+        "data": {
+          "weight": "Weight",
+          "body_fat": "Body fat",
+          "heart_rate": "Heart rate",
+          "blood_oxygen": "Blood oxygen",
+          "blood_sugar": "Blood sugar",
+          "hydration": "Hydration"
+        }
+      },
+      "sensors_confirm": {
+        "title": "Sensors already in use",
+        "description": "These sensors already send to another Syncvita entry: {entities}. Their values will be sent to both people. Continue anyway?"
+      },
+      "sending": {
+        "title": "Sending",
+        "data": {
+          "notify_errors": "Show a notification on errors",
+          "max_age_hours": "Do not send queued values older than"
+        }
+      },
+      "export": {
+        "title": "Apple Health export",
+        "data": {
+          "read_enabled": "Read the Apple Health export",
+          "scan_interval": "Polling interval",
+          "sleep_enabled": "Sleep",
+          "workouts_enabled": "Workouts"
+        }
+      }
+    },
+    "error": {
+      "invalid_unit": "This sensor has an unsupported unit.",
+      "no_sensors": "Select at least one sensor."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "export_active": {
+        "name": "Export active",
+        "state_attributes": {
+          "released_types": {
+            "name": "Released types"
+          }
+        }
+      }
+    },
+    "button": {
+      "process_queue": {
+        "name": "Send queue now"
+      }
+    },
+    "event": {
+      "workout": {
+        "name": "Workout",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "workout_finished": "Workout finished"
+            }
+          }
+        }
+      },
+      "sleep": {
+        "name": "Sleep",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "sleep_recorded": "Sleep recorded"
+            }
+          }
+        }
+      }
+    },
+    "sensor": {
+      "last_transfer": { "name": "Last transfer" },
+      "sent_values": { "name": "Sent values" },
+      "queue": { "name": "Queue" },
+      "last_error": { "name": "Last error" },
+      "rate_limit_remaining": { "name": "Remaining API requests" },
+      "last_upload": { "name": "Last upload from Apple Health" },
+      "stored_values": { "name": "Stored export values" },
+      "sleep_last_night": { "name": "Sleep last night" },
+      "last_workout": { "name": "Last workout" },
+      "workouts_today": { "name": "Workouts today" },
+      "active_energy_burned": { "name": "Active energy today" },
+      "basal_energy_burned": { "name": "Resting energy today" },
+      "blood_glucose": { "name": "Blood glucose latest value" },
+      "body_fat_percentage": { "name": "Body fat latest value" },
+      "body_mass": { "name": "Weight latest value" },
+      "body_mass_index": { "name": "BMI latest value" },
+      "body_temperature": { "name": "Body temperature latest value" },
+      "dietary_caffeine": { "name": "Caffeine today" },
+      "dietary_carbohydrates": { "name": "Carbohydrates today" },
+      "dietary_energy": { "name": "Dietary energy today" },
+      "dietary_fat_total": { "name": "Fat today" },
+      "dietary_protein": { "name": "Protein today" },
+      "dietary_water": { "name": "Water today" },
+      "distance_walking_running": { "name": "Walking and running distance today" },
+      "exercise_time": { "name": "Exercise time today" },
+      "flights_climbed": { "name": "Flights climbed today" },
+      "heart_rate": { "name": "Heart rate latest value" },
+      "heart_rate_recovery": { "name": "Heart rate recovery latest value" },
+      "heart_rate_variability_sdnn": { "name": "HRV latest value" },
+      "height": { "name": "Height latest value" },
+      "oxygen_saturation": { "name": "Oxygen saturation latest value" },
+      "respiratory_rate": { "name": "Respiratory rate latest value" },
+      "resting_heart_rate": { "name": "Resting heart rate latest value" },
+      "stand_time": { "name": "Stand time today" },
+      "step_count": { "name": "Steps today" },
+      "time_in_daylight": { "name": "Time in daylight today" },
+      "vo2_max": { "name": "VO2 max latest value" },
+      "walking_heart_rate_average": { "name": "Walking heart rate latest value" },
+      "walking_speed": { "name": "Walking speed latest value" },
+      "walking_steadiness": { "name": "Walking steadiness latest value" },
+      "wrist_temperature": { "name": "Wrist temperature latest value" }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "The Syncvita entry is not loaded."
+    },
+    "out_of_range": {
+      "message": "The value {value} is outside the allowed range for {measure}."
+    },
+    "send_failed": {
+      "message": "Sending to Syncvita failed: {error}"
+    }
+  },
+  "issues": {
+    "missing_sensor": {
+      "title": "Syncvita sensor of {name} is missing",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Choose a replacement",
+            "description": "{entity_id} no longer exists. Choose a replacement sensor or leave the field empty to stop sending this measure.",
+            "data": {
+              "weight": "Weight",
+              "body_fat": "Body fat",
+              "heart_rate": "Heart rate",
+              "blood_oxygen": "Blood oxygen",
+              "blood_sugar": "Blood sugar",
+              "hydration": "Hydration"
+            }
+          }
+        },
+        "error": {
+          "invalid_unit": "This sensor has an unsupported unit.",
+          "no_sensors": "At least one sensor must stay selected."
+        },
+        "abort": {
+          "entry_removed": "The Syncvita entry no longer exists."
+        }
+      }
+    },
+    "expired_entries": {
+      "title": "Syncvita dropped old values of {name}",
+      "description": "{count} queued values from {oldest} to {newest} were older than the configured maximum age and were not sent. You can send them later with the action syncvita.backfill."
+    }
+  },
+  "selector": {
+    "measure": {
+      "options": {
+        "weight": "Weight",
+        "body_fat": "Body fat",
+        "heart_rate": "Heart rate",
+        "blood_oxygen": "Blood oxygen",
+        "blood_sugar": "Blood sugar",
+        "hydration": "Hydration"
+      }
+    }
+  },
+  "services": {
+    "send_value": {
+      "name": "Send value",
+      "description": "Sends a single value to Syncvita, for manual entries or tests.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Person",
+          "description": "The Syncvita entry to send to."
+        },
+        "measure": {
+          "name": "Measure",
+          "description": "Type of the value."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Value in kg, %, bpm, mg/dL or mL."
+        },
+        "measured_at": {
+          "name": "Measured at",
+          "description": "Time of the measurement. Defaults to now."
+        }
+      }
+    },
+    "backfill": {
+      "name": "Backfill",
+      "description": "Reads the history of the mapped sensors from the recorder and sends values that were not sent yet.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Person",
+          "description": "The Syncvita entry to send to."
+        },
+        "start": {
+          "name": "Start date",
+          "description": "First day to read from the history."
+        },
+        "measures": {
+          "name": "Measures",
+          "description": "Only these measures. Defaults to all mapped measures."
+        }
+      }
+    }
+  }
+}
