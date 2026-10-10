@@ -99,6 +99,27 @@ async def test_export_off_disables_reading(
 
 
 @pytest.mark.parametrize(
+    "settings",
+    [
+        {"status": 404, "json": {}},
+        {"status": 500, "json": {}},
+        {"exc": aiohttp.ClientError()},
+    ],
+)
+async def test_export_settings_failure_does_not_block(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, settings: dict[str, Any]
+) -> None:
+    aioclient_mock.get(f"{API}/stats", json={"success": True})
+    aioclient_mock.get(f"{API}/health-export/settings", **settings)
+    result = await _to_sensor_step(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"weight": "sensor.scale_weight"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["options"][CONF_READ_ENABLED] is True
+
+
+@pytest.mark.parametrize(
     ("mock_kwargs", "error"),
     [
         (

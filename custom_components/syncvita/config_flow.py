@@ -39,6 +39,7 @@ from .api import (
     SyncvitaAuthError,
     SyncvitaClient,
     SyncvitaConnectionError,
+    SyncvitaError,
     SyncvitaExportDisabledError,
     SyncvitaRateLimitError,
 )
@@ -208,10 +209,6 @@ async def async_validate_api_key(
     client = SyncvitaClient(async_get_clientsession(hass), api_key)
     try:
         await client.async_get_stats()
-        try:
-            settings = await client.async_get_export_settings()
-        except SyncvitaExportDisabledError:
-            return {}, False
     except SyncvitaAuthError:
         return {"base": "invalid_auth"}, False
     except SyncvitaConnectionError, SyncvitaRateLimitError:
@@ -219,6 +216,16 @@ async def async_validate_api_key(
     except Exception:
         _LOGGER.exception("Unexpected error while checking the Syncvita API key")
         return {"base": "unknown"}, False
+    try:
+        settings = await client.async_get_export_settings()
+    except SyncvitaExportDisabledError:
+        return {}, False
+    except SyncvitaAuthError:
+        return {"base": "invalid_auth"}, False
+    except SyncvitaError as err:
+        # /stats accepted the key; the export check must not block setup.
+        _LOGGER.warning("Could not read the Syncvita export settings: %s", err)
+        return {}, True
     return {}, bool(settings.get("enabled"))
 
 

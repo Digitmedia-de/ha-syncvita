@@ -6,6 +6,9 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
+from homeassistant.components.persistent_notification import (
+    _async_get_or_create_notifications,
+)
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
 import pytest
@@ -424,13 +427,14 @@ async def test_bulk_partial_failure(  # noqa: PLR0917
             },
         },
     )
-    with patch(NOTIFY) as notify:
-        await setup_integration(hass, mock_config_entry)
+    await setup_integration(hass, mock_config_entry)
     store = mock_config_entry.runtime_data.store
     assert store.queue == []
     assert store.sent_count == 1
     assert "out of range" in caplog.text
-    notify.assert_called_once()
+    notifications = _async_get_or_create_notifications(hass)
+    assert f"{DOMAIN}_{mock_config_entry.entry_id}" in notifications
+    assert mock_config_entry.runtime_data.sender.last_error is not None
 
 
 async def test_bulk_validation_error_drops_chunk(
@@ -513,3 +517,51 @@ async def test_send_bulk_directly(
     assert mock_config_entry.runtime_data.store.is_known(
         "sensor.scale_weight", measurement.key
     )
+
+
+async def test_send_bulk_partial_failure_keeps_notification(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    freezer.move_to("2026-10-10 10:00:00+00:00")
+    aioclient_mock.post(
+        f"{API}/bulk",
+        status=201,
+        json={
+            "success": True,
+            "data": {
+                "results": [
+                    {"index": 0, "type": "weight", "status": "created", "id": 1},
+                    {
+                        "index": 1,
+                        "type": "weight",
+                        "status": "failed",
+                        "error": "out of range",
+                    },
+                ]
+            },
+        },
+    )
+    await setup_integration(hass, mock_config_entry)
+    sender = mock_config_entry.runtime_data.sender
+    moment = dt_util.utcnow() - timedelta(days=30)
+    result = await sender.async_send_bulk(
+        [
+            queued_entry(
+                "sensor.scale_weight",
+                build_measurement(Measure.WEIGHT, 79.0, "kg", moment),
+            ),
+            queued_entry(
+                "sensor.scale_weight",
+                build_measurement(
+                    Measure.WEIGHT, 81.0, "kg", moment + timedelta(minutes=5)
+                ),
+            ),
+        ]
+    )
+    assert result == (1, 1)
+    notifications = _async_get_or_create_notifications(hass)
+    assert f"{DOMAIN}_{mock_config_entry.entry_id}" in notifications
+    assert sender.last_error is not None

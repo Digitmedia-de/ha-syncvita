@@ -183,10 +183,11 @@ class SyncvitaSender:
                 self._async_schedule_rate_limit_resume()
                 return
             rejected = False
+            failed = 0
             while self._store.queue:
                 chunk = self._store.queue[:BULK_CHUNK_SIZE]
                 try:
-                    await self._async_post_chunk(chunk)
+                    failed += (await self._async_post_chunk(chunk)).count(False)
                 except SyncvitaValidationError as err:
                     rejected = True
                     _LOGGER.error(
@@ -207,7 +208,9 @@ class SyncvitaSender:
                     return
                 del self._store.queue[: len(chunk)]
                 self._store.async_schedule_save()
-            if not rejected:
+            if failed:
+                self._async_report_bulk_rejected(failed)
+            elif not rejected:
                 self._async_report_success()
 
     async def async_send_bulk(self, entries: list[QueuedEntry]) -> tuple[int, int]:
@@ -217,9 +220,12 @@ class SyncvitaSender:
             for start in range(0, len(entries), BULK_CHUNK_SIZE):
                 chunk = entries[start : start + BULK_CHUNK_SIZE]
                 sent += sum(await self._async_post_chunk(chunk))
-        if sent:
+        failed = len(entries) - sent
+        if failed:
+            self._async_report_bulk_rejected(failed)
+        elif sent:
             self._async_report_success()
-        return sent, len(entries) - sent
+        return sent, failed
 
     async def _async_post_chunk(self, chunk: list[QueuedEntry]) -> list[bool]:
         results = await self._client.async_post_bulk([_bulk_entry(e) for e in chunk])
@@ -328,6 +334,13 @@ class SyncvitaSender:
         self.last_error_status = None
         self._retry_step = 0
         persistent_notification.async_dismiss(self._hass, self._notification_id)
+        async_dispatcher_send(self._hass, self.signal)
+
+    @callback
+    def _async_report_bulk_rejected(self, count: int) -> None:
+        """Record rejected /bulk entries without dismissing their notification."""
+        self.last_error = f"Syncvita hat {count} nachgereichte Werte abgelehnt"
+        self.last_error_status = None
         async_dispatcher_send(self._hass, self.signal)
 
     @callback
