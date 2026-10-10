@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 
 if TYPE_CHECKING:
     from .api import SyncvitaClient
+    from .coordinator import SyncvitaExportCoordinator
     from .sender import SyncvitaSender
     from .store import SyncvitaStore
 
@@ -20,6 +21,7 @@ class SyncvitaRuntimeData:
     client: SyncvitaClient
     store: SyncvitaStore
     sender: SyncvitaSender
+    coordinator: SyncvitaExportCoordinator | None = None
 
 
 type SyncvitaConfigEntry = ConfigEntry[SyncvitaRuntimeData]

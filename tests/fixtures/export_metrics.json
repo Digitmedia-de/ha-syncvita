@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "message": "Health export metrics",
+  "data": {
+    "enabled": true,
+    "last_upload_at": "2026-10-10 06:12:03",
+    "metrics": [
+      {"metric": "step_count", "kind": "quantity", "unit": "count", "cumulative": true, "count": 9012, "first_date": "2025-10-10", "last_date": "2026-10-10", "latest": {"value": 8421, "date": "2026-10-10", "time": null}},
+      {"metric": "resting_heart_rate", "kind": "quantity", "unit": "count/min", "cumulative": false, "count": 2240, "first_date": "2020-03-27", "last_date": "2026-10-09", "latest": {"value": 52, "date": "2026-10-09", "time": "07:12:00"}},
+      {"metric": "body_temperature", "kind": "quantity", "unit": "degC", "cumulative": false, "count": 102, "first_date": "2021-11-09", "last_date": "2023-12-30", "latest": {"value": 36.6, "date": "2023-12-30", "time": "08:00:00"}},
+      {"metric": "walking_speed", "kind": "quantity", "unit": "m/s", "cumulative": false, "count": 0, "first_date": null, "last_date": null, "latest": null},
+      {"metric": "blood_pressure", "kind": "blood_pressure", "unit": "mmHg", "cumulative": false, "count": 32, "first_date": "2021-11-09", "last_date": "2025-11-01", "latest": {"systolic": 120, "diastolic": 80, "date": "2025-11-01", "time": "09:00:00"}},
+      {"metric": "sleep_analysis", "kind": "category", "unit": null, "cumulative": false, "count": 120, "first_date": "2026-06-01", "last_date": "2026-10-10", "latest": null},
+      {"metric": "workouts", "kind": "workouts", "unit": null, "cumulative": false, "count": 2, "first_date": "2026-10-08", "last_date": "2026-10-10", "latest": null},
+      {"metric": "new_future_type", "kind": "quantity", "unit": "widgets", "cumulative": false, "count": 3, "first_date": "2026-10-01", "last_date": "2026-10-10", "latest": {"value": 7, "date": "2026-10-10", "time": "10:00:00"}}
+    ]
+  }
+}

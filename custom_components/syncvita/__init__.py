@@ -9,7 +9,8 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SyncvitaClient
-from .const import DOMAIN
+from .const import CONF_READ_ENABLED, DOMAIN
+from .coordinator import SyncvitaExportCoordinator
 from .models import SyncvitaConfigEntry, SyncvitaRuntimeData
 from .sender import SyncvitaSender
 from .store import SyncvitaStore
@@ -32,8 +33,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: SyncvitaConfigEntry) -> 
     client = SyncvitaClient(async_get_clientsession(hass), entry.data[CONF_API_KEY])
     store = SyncvitaStore(hass, entry.entry_id)
     await store.async_load()
+    coordinator: SyncvitaExportCoordinator | None = None
+    if entry.options.get(CONF_READ_ENABLED, True):
+        coordinator = SyncvitaExportCoordinator(hass, entry, client, store)
     sender = SyncvitaSender(hass, entry, client, store)
-    entry.runtime_data = SyncvitaRuntimeData(client=client, store=store, sender=sender)
+    entry.runtime_data = SyncvitaRuntimeData(
+        client=client, store=store, sender=sender, coordinator=coordinator
+    )
+    if coordinator is not None:
+        # Not async_config_entry_first_refresh: export problems must not stop
+        # the sending part from queueing values (see README).
+        await coordinator.async_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     sender.async_start()
     return True

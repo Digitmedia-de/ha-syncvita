@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date, timedelta
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -149,3 +150,53 @@ def entity_id_for(
     )
     assert entity_id is not None, key
     return entity_id
+
+
+def mock_export_api(
+    aioclient_mock: AiohttpClientMocker,
+    today: date = date(2026, 10, 10),
+    *,
+    metrics: dict[str, Any] | None = None,
+    sleep: dict[str, Any] | None = None,
+    workouts: dict[str, Any] | None = None,
+    headers: dict[str, str] | None = None,
+) -> None:
+    """Mock all export endpoints for the given local day."""
+    aioclient_mock.get(
+        f"{API}/health-export/metrics",
+        json=metrics or load_fixture("export_metrics.json"),
+        headers=headers,
+    )
+    aioclient_mock.get(
+        f"{API}/health-export/settings", json=load_fixture("export_settings.json")
+    )
+    aioclient_mock.get(
+        f"{API}/health-export/daily",
+        params={
+            "metric": "sleep_analysis",
+            "from": (today - timedelta(days=1)).isoformat(),
+            "to": today.isoformat(),
+        },
+        json=sleep or load_fixture("export_daily_sleep.json"),
+    )
+    aioclient_mock.get(
+        f"{API}/health-export/daily",
+        params={
+            "metric": "workouts",
+            "from": (today - timedelta(days=6)).isoformat(),
+            "to": today.isoformat(),
+        },
+        json=workouts or load_fixture("export_daily_workouts.json"),
+    )
+
+
+def calls_to(
+    aioclient_mock: AiohttpClientMocker, path: str, metric: str | None = None
+) -> int:
+    """Count requests to an API path (optionally for one export metric)."""
+    return sum(
+        1
+        for call in aioclient_mock.mock_calls
+        if call[1].path == f"/v1{path}"
+        and (metric is None or call[1].query.get("metric") == metric)
+    )

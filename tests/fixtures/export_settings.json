@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "message": "Health export settings",
+  "data": {
+    "enabled": true,
+    "types": ["step_count", "resting_heart_rate", "sleep_analysis", "workouts"],
+    "history_days": 90,
+    "last_upload_at": "2026-10-10 06:12:03",
+    "counts": {"step_count": 9012, "resting_heart_rate": 2240}
+  }
+}

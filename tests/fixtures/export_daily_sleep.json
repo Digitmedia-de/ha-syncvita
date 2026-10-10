@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "message": "Health export daily values",
+  "data": {
+    "metric": "sleep_analysis",
+    "from": "2026-10-09",
+    "to": "2026-10-10",
+    "nights": [
+      {"date": "2026-10-09", "bedtime": "2026-10-08T23:30:00", "wake_time": "2026-10-09T06:30:00", "asleep_minutes": 390, "in_bed_minutes": null, "stages": {"core": 230, "deep": 60, "rem": 85, "awake": 15}},
+      {"date": "2026-10-10", "bedtime": "2026-10-09T23:05:00", "wake_time": "2026-10-10T06:41:00", "asleep_minutes": 412, "in_bed_minutes": null, "stages": {"core": 250, "deep": 62, "rem": 88, "awake": 12}}
+    ]
+  }
+}
