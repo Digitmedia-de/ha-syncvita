@@ -41,6 +41,7 @@ SPEC.md
 openapi-spec.json
 docs/superpowers/
 .claude/
+CLAUDE.md
 CLAUDE.local.md
 
 # --- Editoren und Betriebssystem ---
