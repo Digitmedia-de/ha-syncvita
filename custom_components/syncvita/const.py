@@ -48,6 +48,7 @@ SENT_KEYS_PER_SOURCE: Final = 500
 SEEN_WORKOUTS_MAX: Final = 200
 
 FULL_REFRESH_INTERVAL: Final = timedelta(hours=1)
+SENT_REFRESH_DELAY_SECONDS: Final = 5
 STALE_AFTER: Final = timedelta(hours=48)
 WORKOUT_LOOKBACK_DAYS: Final = 7
 

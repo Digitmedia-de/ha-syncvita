@@ -48,6 +48,7 @@ from .store import QueuedEntry, SyncvitaStore
 
 if TYPE_CHECKING:
     from .models import SyncvitaConfigEntry
+    from .values import SyncvitaValuesCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -87,12 +88,14 @@ class SyncvitaSender:
         entry: SyncvitaConfigEntry,
         client: SyncvitaClient,
         store: SyncvitaStore,
+        values: SyncvitaValuesCoordinator,
     ) -> None:
         """Initialize the sender."""
         self._hass = hass
         self._entry = entry
         self._client = client
         self._store = store
+        self._values = values
         self._lock = asyncio.Lock()
         self._retry_step = 0
         self._cancel_timer: CALLBACK_TYPE | None = None
@@ -168,6 +171,7 @@ class SyncvitaSender:
                 return False
             self._store.mark_sent(source, measurement.key, dt_util.utcnow())
             self._async_report_success()
+        await self._values.async_value_sent([measurement.measure.value])
         if self._store.queue:
             await self.async_process_queue()
         return True
@@ -254,6 +258,9 @@ class SyncvitaSender:
                 f"Syncvita hat {len(failed)} nachgereichte Werte abgelehnt. "
                 "Details stehen im Log."
             )
+        await self._values.async_value_sent(
+            {entry["measure"] for entry, ok in zip(chunk, created, strict=True) if ok}
+        )
         return created
 
     def _rate_limited(self) -> bool:

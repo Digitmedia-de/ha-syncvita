@@ -8,8 +8,13 @@ from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import SOURCE_REAUTH
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
+from custom_components.syncvita.const import DOMAIN
 from custom_components.syncvita.diagnostics import async_get_config_entry_diagnostics
+from custom_components.syncvita.measures import Measure, build_measurement
+from custom_components.syncvita.sender import queued_entry
 
 from .conftest import API, calls_to, entity_id_for, mock_values_api, setup_integration
 
@@ -277,3 +282,127 @@ async def test_diagnostics_without_values(
     text = json.dumps(diagnostics["values"])
     assert "76.8" not in text
     assert "4070" not in text
+
+
+async def _send_value(
+    hass: HomeAssistant, entry: MockConfigEntry, measure: str, value: float
+) -> None:
+    await hass.services.async_call(
+        DOMAIN,
+        "send_value",
+        {
+            "config_entry_id": entry.entry_id,
+            "measure": measure,
+            "value": value,
+            "measured_at": "2026-10-10 11:58:00",
+        },
+        blocking=True,
+    )
+
+
+def _mock_after_send(aioclient_mock: AiohttpClientMocker) -> None:
+    aioclient_mock.clear_requests()
+    aioclient_mock.post(f"{API}/weight", status=201, json={"success": True})
+    aioclient_mock.post(f"{API}/body-fat", status=201, json={"success": True})
+    aioclient_mock.post(f"{API}/bulk", json={"success": True, "data": {}})
+    mock_values_api(
+        aioclient_mock,
+        STATS,
+        {
+            "/weight": [
+                {"weight_kg": "75.4", "date": "2026-10-10", "time": "11:58:00"}
+            ],
+            "/body-fat": [
+                {"percentage": "18.2", "date": "2026-10-10", "time": "11:58:00"}
+            ],
+        },
+    )
+
+
+async def _wait_for_debounce(
+    hass: HomeAssistant, freezer: FrozenDateTimeFactory
+) -> None:
+    freezer.tick(timedelta(seconds=6))
+    async_fire_time_changed(hass, dt_util.utcnow())
+    await hass.async_block_till_done()
+
+
+async def test_sent_value_is_read_back(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    entity_registry: er.EntityRegistry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    await _setup(hass, aioclient_mock, mock_config_entry, freezer)
+    _mock_after_send(aioclient_mock)
+
+    await _send_value(hass, mock_config_entry, "weight", 75.4)
+    await hass.async_block_till_done()
+    assert calls_to(aioclient_mock, "/weight") == 1  # only the POST so far
+
+    await _wait_for_debounce(hass, freezer)
+    weight = _state(hass, entity_registry, mock_config_entry, "weight")
+    assert float(weight.state) == 75.4
+    assert weight.attributes["measured_at"] == "2026-10-10T11:58:00+02:00"
+    assert calls_to(aioclient_mock, "/stats") == 0
+    assert calls_to(aioclient_mock, "/steps") == 0
+
+
+async def test_two_sends_share_one_read(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    entity_registry: er.EntityRegistry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    await _setup(hass, aioclient_mock, mock_config_entry, freezer)
+    _mock_after_send(aioclient_mock)
+
+    await _send_value(hass, mock_config_entry, "weight", 75.4)
+    freezer.tick(timedelta(seconds=2))
+    await _send_value(hass, mock_config_entry, "body_fat", 18.2)
+    await _wait_for_debounce(hass, freezer)
+
+    reads = [c for c in aioclient_mock.mock_calls if c[0] == "GET"]
+    assert sorted(call[1].path for call in reads) == ["/v1/body-fat", "/v1/weight"]
+    body_fat = _state(hass, entity_registry, mock_config_entry, "body_fat")
+    assert float(body_fat.state) == 18.2
+
+
+async def test_bulk_send_triggers_read(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    await _setup(hass, aioclient_mock, mock_config_entry, freezer)
+    _mock_after_send(aioclient_mock)
+    measurement = build_measurement(
+        Measure.WEIGHT, 75.4, "kg", dt_util.now().replace(microsecond=0)
+    )
+    sender = mock_config_entry.runtime_data.sender
+    sent, failed = await sender.async_send_bulk(
+        [queued_entry("sensor.scale_weight", measurement)]
+    )
+    assert (sent, failed) == (1, 0)
+    await _wait_for_debounce(hass, freezer)
+    assert calls_to(aioclient_mock, "/weight") == 1
+    assert calls_to(aioclient_mock, "/body-fat") == 0
+
+
+async def test_no_read_after_send_when_rate_limit_is_tight(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    await _setup(hass, aioclient_mock, mock_config_entry, freezer)
+    _mock_after_send(aioclient_mock)
+    rate_limit = mock_config_entry.runtime_data.client.rate_limit
+    rate_limit.remaining = 25
+    rate_limit.reset_at = dt_util.utcnow() + timedelta(minutes=30)
+
+    await _send_value(hass, mock_config_entry, "weight", 75.4)
+    await _wait_for_debounce(hass, freezer)
+    assert [c for c in aioclient_mock.mock_calls if c[0] == "GET"] == []

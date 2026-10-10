@@ -89,7 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SyncvitaConfigEntry) -> 
     if entry.options.get(CONF_READ_ENABLED, True):
         coordinator = SyncvitaExportCoordinator(hass, entry, client, store)
     values = SyncvitaValuesCoordinator(hass, entry, client)
-    sender = SyncvitaSender(hass, entry, client, store)
+    sender = SyncvitaSender(hass, entry, client, store, values)
     async_remove_disabled_entities(hass, entry)
     entry.runtime_data = SyncvitaRuntimeData(
         client=client,

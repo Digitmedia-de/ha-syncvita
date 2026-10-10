@@ -8,6 +8,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -18,10 +19,11 @@ from .const import (
     DOMAIN,
     FULL_REFRESH_INTERVAL,
     READ_PAUSE_BELOW,
+    SENT_REFRESH_DELAY_SECONDS,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping
+    from collections.abc import Callable, Iterable, Mapping
 
     from homeassistant.core import HomeAssistant
 
@@ -107,7 +109,11 @@ def _measured_at(item: Mapping[str, Any], time_fields: tuple[str, ...]) -> datet
 
 
 class SyncvitaValuesCoordinator(DataUpdateCoordinator[dict[str, ValueReading]]):
-    """Poll /stats and load a value type only when its number of entries changed."""
+    """Poll /stats and load a value type only when its number of entries changed.
+
+    After a value was sent, the sent types are read again right away (without
+    /stats); sends within a few seconds share one such read.
+    """
 
     config_entry: SyncvitaConfigEntry
 
@@ -123,8 +129,22 @@ class SyncvitaValuesCoordinator(DataUpdateCoordinator[dict[str, ValueReading]]):
             update_interval=timedelta(
                 minutes=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
             ),
+            request_refresh_debouncer=Debouncer(
+                hass, _LOGGER, cooldown=SENT_REFRESH_DELAY_SECONDS, immediate=False
+            ),
         )
         self._client = client
+        self._sent: set[str] = set()
+
+    async def async_value_sent(self, keys: Iterable[str]) -> None:
+        """Read the sent value types again soon, unless the rate limit is tight."""
+        keys = set(keys)
+        if not keys or self._client.rate_limit.is_below(
+            READ_PAUSE_BELOW, dt_util.utcnow()
+        ):
+            return
+        self._sent |= keys
+        await self.async_request_refresh()
 
     async def _async_update_data(self) -> dict[str, ValueReading]:
         now = dt_util.utcnow()
@@ -132,8 +152,12 @@ class SyncvitaValuesCoordinator(DataUpdateCoordinator[dict[str, ValueReading]]):
             READ_PAUSE_BELOW, now
         ):
             _LOGGER.debug("Few API requests left, the sending part goes first")
+            self._sent.clear()
             return self.data
+        sent, self._sent = self._sent, set()
         try:
+            if sent and self.data is not None:
+                return await self._async_fetch_sent(sent, now)
             return await self._async_fetch(now)
         except SyncvitaAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
@@ -164,6 +188,21 @@ class SyncvitaValuesCoordinator(DataUpdateCoordinator[dict[str, ValueReading]]):
             readings[value_type.key] = await self._async_read(
                 value_type, total, today, now
             )
+        return readings
+
+    async def _async_fetch_sent(
+        self, sent: set[str], now: datetime
+    ) -> dict[str, ValueReading]:
+        # The old total is kept, so the next /stats poll reads the type once
+        # more; that is cheaper than an extra /stats call now.
+        readings = dict(self.data)
+        today = dt_util.now().date()
+        for value_type in VALUE_TYPES:
+            if value_type.key in sent:
+                last = readings.get(value_type.key)
+                readings[value_type.key] = await self._async_read(
+                    value_type, last.total if last else 0, today, now
+                )
         return readings
 
     async def _async_read(

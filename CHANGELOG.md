@@ -13,6 +13,7 @@ Alle nennenswerten Änderungen an dieser Integration. Das Format folgt [Keep a C
 ### Geändert
 
 - Sensoren aus dem Apple-Health-Export tragen den Zusatz „(Apple Health)“, z. B. „Gewicht (Apple Health)“. Bestehende Entity-IDs bleiben unverändert.
+- Nach einem erfolgreichen Senden (Sensoränderung, Warteschlange, `syncvita.send_value`, `syncvita.backfill`) liest die Integration die gesendeten Messarten nach etwa 5 Sekunden neu, statt bis zum nächsten Intervall zu warten. Mehrere Sendungen in diesem Zeitraum teilen sich eine Abfrage; ist das Rate-Limit knapp (unter 30 Anfragen), übernimmt der normale Abruf.
 
 ## [0.1.2] – 2026-10-10
 

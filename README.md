@@ -133,7 +133,7 @@ Diagnosedaten enthalten nur Typnamen, Anzahlen und Zeitpunkte, keine Messwerte u
 
 1. „<Typ> heute“ nutzt `latest.value` aus `/health-export/metrics` (laut API die Summe des letzten Tags). `/daily` wird nur für Schlaf und Workouts abgefragt.
 2. Die Auswahl der Typ-Sensoren läuft über die Entity-Registry statt über eine Mehrfachauswahl im Options-Flow.
-3. Das Abfrageintervall ist auf 10–60 Minuten begrenzt, `/settings` wird stündlich gelesen. Für die gespeicherten Werte fragt die Integration pro Intervall nur `/stats` ab; die Einträge einer Messart liest sie nur, wenn sich deren Anzahl geändert hat, und sonst einmal pro Stunde. So bleibt der Lese-Teil sicher unter 50 Anfragen pro Stunde.
+3. Das Abfrageintervall ist auf 10–60 Minuten begrenzt, `/settings` wird stündlich gelesen. Für die gespeicherten Werte fragt die Integration pro Intervall nur `/stats` ab; die Einträge einer Messart liest sie nur, wenn sich deren Anzahl geändert hat, und sonst einmal pro Stunde. So bleibt der Lese-Teil sicher unter 50 Anfragen pro Stunde. Nach einem erfolgreichen Senden liest sie die gesendeten Messarten nach etwa 5 Sekunden direkt neu (ohne `/stats`); mehrere Sendungen in diesem Zeitraum teilen sich eine Abfrage, und bei weniger als 30 verbleibenden Anfragen entfällt sie.
 4. Der erste Export-Abruf blockiert das Setup nicht (`async_refresh` statt `async_config_entry_first_refresh`), damit der Sende-Teil auch bei Netzproblemen sofort Werte einreiht.
 5. Blutdruck, Stehstunden und Achtsamkeit bekommen in v0.1.0 keine eigenen Sensoren.
 6. Der Hinweis auf Sensoren, die schon an eine andere Person senden, ist ein eigener Bestätigungsschritt.
