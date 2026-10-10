@@ -54,7 +54,7 @@ Alle Entitäten hängen am Gerät „Syncvita <Name>“.
 | Export aktiv | an/aus, Attribut `released_types` |
 | Letzter Upload aus Apple Health | Zeitpunkt, Attribut `age_minutes` |
 | Gespeicherte Exportwerte | Summe, Attribut `counts` |
-| `<Typ> letzter Wert` / `<Typ> heute` | je Apple-Health-Typ mit Werten, Attribute `measured_at` und `stale` (nach 48 Stunden ohne neuen Wert) |
+| `<Typ>` / `<Typ> heute` | je Apple-Health-Typ mit Werten, Attribute `measured_at` und `stale` (nach 48 Stunden ohne neuen Wert) |
 | Schlaf letzte Nacht | Stunden, Attribute `night`, `bedtime`, `wake_time`, `stages_minutes` |
 | Letztes Workout / Workouts heute | Aktivität mit Start, Ende, Dauer, kcal, Distanz, Puls / Anzahl |
 | Workout / Schlaf | Ereignis-Entitäten zu den beiden Ereignissen |

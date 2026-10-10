@@ -4,6 +4,12 @@ Alle nennenswerten Änderungen an dieser Integration. Das Format folgt [Keep a C
 
 ## [Unreleased]
 
+## [0.1.2] – 2026-10-10
+
+### Geändert
+
+- Sensoren für Apple-Health-Werte heißen nur noch nach dem Typ, z. B. „Ruhepuls“ statt „Ruhepuls letzter Wert“. Bestehende Entity-IDs bleiben unverändert.
+
 ## [0.1.1] – 2026-10-10
 
 ### Geändert
@@ -21,6 +27,7 @@ Alle nennenswerten Änderungen an dieser Integration. Das Format folgt [Keep a C
 - Aktionen `syncvita.send_value` und `syncvita.backfill`.
 - Diagnose-Sensoren, Button zum Abarbeiten der Warteschlange, Diagnosedaten ohne Messwerte und Reparaturhinweise für fehlende Sensoren.
 
-[Unreleased]: https://github.com/Digitmedia-de/ha-syncvita/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Digitmedia-de/ha-syncvita/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Digitmedia-de/ha-syncvita/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Digitmedia-de/ha-syncvita/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Digitmedia-de/ha-syncvita/commits/35f2538
