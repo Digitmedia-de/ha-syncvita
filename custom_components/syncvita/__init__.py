@@ -22,6 +22,7 @@ from .repairs import async_delete_issues, async_setup_missing_sensor_checks
 from .sender import SyncvitaSender
 from .services import async_setup_services
 from .store import SyncvitaStore
+from .values import SyncvitaValuesCoordinator
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -87,14 +88,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: SyncvitaConfigEntry) -> 
     coordinator: SyncvitaExportCoordinator | None = None
     if entry.options.get(CONF_READ_ENABLED, True):
         coordinator = SyncvitaExportCoordinator(hass, entry, client, store)
+    values = SyncvitaValuesCoordinator(hass, entry, client)
     sender = SyncvitaSender(hass, entry, client, store)
     async_remove_disabled_entities(hass, entry)
     entry.runtime_data = SyncvitaRuntimeData(
-        client=client, store=store, sender=sender, coordinator=coordinator
+        client=client,
+        store=store,
+        sender=sender,
+        values=values,
+        coordinator=coordinator,
     )
+    # Not async_config_entry_first_refresh: reading problems must not stop the
+    # sending part from queueing values (see README).
+    await values.async_refresh()
     if coordinator is not None:
-        # Not async_config_entry_first_refresh: export problems must not stop
-        # the sending part from queueing values (see README).
         await coordinator.async_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     if coordinator is not None:

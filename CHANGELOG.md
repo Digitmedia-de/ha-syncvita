@@ -4,6 +4,16 @@ Alle nennenswerten Änderungen an dieser Integration. Das Format folgt [Keep a C
 
 ## [Unreleased]
 
+## [0.1.3] – 2026-10-10
+
+### Hinzugefügt
+
+- Sensoren für die in Syncvita gespeicherten Werte – auch ohne Apple-Health-Export: Gewicht, Körperfett, Herzfrequenz, Blutsauerstoff, Blutzucker (jeweils letzter Wert mit Messzeit), Schritte heute und Trinkmenge heute.
+
+### Geändert
+
+- Sensoren aus dem Apple-Health-Export tragen den Zusatz „(Apple Health)“, z. B. „Gewicht (Apple Health)“. Bestehende Entity-IDs bleiben unverändert.
+
 ## [0.1.2] – 2026-10-10
 
 ### Geändert
@@ -27,7 +37,8 @@ Alle nennenswerten Änderungen an dieser Integration. Das Format folgt [Keep a C
 - Aktionen `syncvita.send_value` und `syncvita.backfill`.
 - Diagnose-Sensoren, Button zum Abarbeiten der Warteschlange, Diagnosedaten ohne Messwerte und Reparaturhinweise für fehlende Sensoren.
 
-[Unreleased]: https://github.com/Digitmedia-de/ha-syncvita/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/Digitmedia-de/ha-syncvita/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/Digitmedia-de/ha-syncvita/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Digitmedia-de/ha-syncvita/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Digitmedia-de/ha-syncvita/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Digitmedia-de/ha-syncvita/commits/35f2538

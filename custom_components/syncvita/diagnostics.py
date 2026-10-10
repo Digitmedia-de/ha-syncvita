@@ -47,6 +47,18 @@ async def async_get_config_entry_diagnostics(
             "remaining": data.client.rate_limit.remaining,
             "reset_at": reset_at.isoformat() if reset_at else None,
         },
+        "values": {
+            "last_update_success": data.values.last_update_success,
+            "types": {
+                key: {
+                    "total": reading.total,
+                    "measured_at": reading.measured_at.isoformat()
+                    if reading.measured_at
+                    else None,
+                }
+                for key, reading in (data.values.data or {}).items()
+            },
+        },
         "export": None,
     }
     coordinator = data.coordinator

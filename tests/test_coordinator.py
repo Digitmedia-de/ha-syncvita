@@ -35,6 +35,7 @@ from .conftest import (
     load_fixture,
     make_entry,
     mock_export_api,
+    mock_values_api,
     setup_integration,
 )
 
@@ -332,6 +333,7 @@ async def test_export_disabled_is_a_state(
     caplog: pytest.LogCaptureFixture,
     metrics_mock: dict[str, Any],
 ) -> None:
+    mock_values_api(aioclient_mock)
     aioclient_mock.get(f"{API}/health-export/metrics", **metrics_mock)
     with caplog.at_level(logging.WARNING):
         await setup_integration(hass, export_config_entry)
@@ -380,6 +382,7 @@ async def test_update_failed(
     export_config_entry: MockConfigEntry,
     metrics_mock: dict[str, Any],
 ) -> None:
+    mock_values_api(aioclient_mock)
     aioclient_mock.get(f"{API}/health-export/metrics", **metrics_mock)
     await setup_integration(hass, export_config_entry)
     coordinator = export_config_entry.runtime_data.coordinator

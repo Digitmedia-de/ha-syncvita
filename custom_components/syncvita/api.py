@@ -95,6 +95,16 @@ class SyncvitaClient:
         """Return the statistics; used to validate a key."""
         return await self._request("GET", "/stats")
 
+    async def async_get_values(
+        self, path: str, params: dict[str, str]
+    ) -> list[dict[str, Any]]:
+        """Return the stored values of one type, newest first."""
+        payload = await self._request("GET", path, params=params)
+        data = payload.get("data")
+        if not isinstance(data, list):
+            return []
+        return [item for item in data if isinstance(item, dict)]
+
     async def async_post_measure(self, path: str, body: dict[str, Any]) -> None:
         """Send one measurement to a single-value endpoint."""
         await self._request("POST", path, json=body)

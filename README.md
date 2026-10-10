@@ -5,7 +5,7 @@ Diese Integration sendet neue Messwerte aus Home Assistant (z. B. Waage, Pulsoxi
 ## Funktionen
 
 - **Senden:** Gewicht, Körperfett, Herzfrequenz, Blutsauerstoff, Blutzucker und Trinkmenge, jeweils genau einmal, mit dem Messzeitpunkt aus Home Assistant. Bei Netzproblemen landen Werte in einer Warteschlange und gehen später gesammelt raus.
-- **Lesen:** Status des Apple-Health-Exports, letzte Werte je Typ (z. B. Ruhepuls, HRV, VO2max), Schritte heute, Schlaf der letzten Nacht und Workouts.
+- **Lesen:** die in Syncvita gespeicherten Werte (Gewicht, Körperfett, Herzfrequenz, Blutsauerstoff, Blutzucker, Schritte heute, Trinkmenge heute) – egal ob sie aus Home Assistant, der App oder einer anderen Quelle stammen. Mit freigegebenem Apple-Health-Export zusätzlich: Status des Exports, letzte Werte je Typ (z. B. Ruhepuls, HRV, VO2max), Schritte heute, Schlaf der letzten Nacht und Workouts.
 - **Ereignisse:** `syncvita_workout_finished` und `syncvita_sleep_recorded` für Automationen, zusätzlich als Ereignis-Entitäten.
 - **Aktionen:** `syncvita.send_value` und `syncvita.backfill`.
 
@@ -35,7 +35,7 @@ Unter **Konfigurieren** gibt es drei Bereiche:
 
 - **Sensoren:** Zuordnung ändern.
 - **Senden:** Fehlerbenachrichtigung an/aus (Standard an) und Höchstalter für Werte in der Warteschlange (Standard 72 Stunden).
-- **Apple-Health-Export:** Lesen an/aus, Abfrageintervall 10–60 Minuten (Standard 15), Schlaf und Workouts an/aus.
+- **Apple-Health-Export:** Lesen an/aus, Abfrageintervall 10–60 Minuten (Standard 15, gilt auch für die gespeicherten Werte), Schlaf und Workouts an/aus.
 
 Welche Typ-Sensoren aktiv sind, steuerst du wie gewohnt über **Entitäten → aktivieren/deaktivieren**. Standardmäßig aktiv sind Ruhepuls, HRV, Sauerstoffsättigung, Atemfrequenz, VO2max und Schritte heute. Die Sensoren für Schlaf und Workouts schaltest du über die Optionen ein und aus.
 
@@ -51,10 +51,12 @@ Alle Entitäten hängen am Gerät „Syncvita <Name>“.
 | Letzter Fehler | Kurztext, Attribut `http_status` |
 | Verbleibende API-Anfragen | standardmäßig deaktiviert |
 | Warteschlange jetzt senden | Button |
+| Gewicht, Körperfett, Herzfrequenz, Blutsauerstoff, Blutzucker | letzter in Syncvita gespeicherter Wert, Attribute `measured_at` und `stale` (nach 48 Stunden ohne neuen Wert); unbekannt, solange es keinen Wert gibt |
+| Schritte heute / Trinkmenge heute | Summe der heute in Syncvita gespeicherten Einträge, Attribut `measured_at` |
 | Export aktiv | an/aus, Attribut `released_types` |
 | Letzter Upload aus Apple Health | Zeitpunkt, Attribut `age_minutes` |
 | Gespeicherte Exportwerte | Summe, Attribut `counts` |
-| `<Typ>` / `<Typ> heute` | je Apple-Health-Typ mit Werten, Attribute `measured_at` und `stale` (nach 48 Stunden ohne neuen Wert) |
+| `<Typ> (Apple Health)` / `<Typ> heute (Apple Health)` | je Apple-Health-Typ mit Werten, Attribute `measured_at` und `stale` (nach 48 Stunden ohne neuen Wert) |
 | Schlaf letzte Nacht | Stunden, Attribute `night`, `bedtime`, `wake_time`, `stages_minutes` |
 | Letztes Workout / Workouts heute | Aktivität mit Start, Ende, Dauer, kcal, Distanz, Puls / Anzahl |
 | Workout / Schlaf | Ereignis-Entitäten zu den beiden Ereignissen |
@@ -131,7 +133,7 @@ Diagnosedaten enthalten nur Typnamen, Anzahlen und Zeitpunkte, keine Messwerte u
 
 1. „<Typ> heute“ nutzt `latest.value` aus `/health-export/metrics` (laut API die Summe des letzten Tags). `/daily` wird nur für Schlaf und Workouts abgefragt.
 2. Die Auswahl der Typ-Sensoren läuft über die Entity-Registry statt über eine Mehrfachauswahl im Options-Flow.
-3. Das Abfrageintervall ist auf 10–60 Minuten begrenzt, `/settings` wird stündlich gelesen. So bleibt der Lese-Teil sicher unter 30 Anfragen pro Stunde.
+3. Das Abfrageintervall ist auf 10–60 Minuten begrenzt, `/settings` wird stündlich gelesen. Für die gespeicherten Werte fragt die Integration pro Intervall nur `/stats` ab; die Einträge einer Messart liest sie nur, wenn sich deren Anzahl geändert hat, und sonst einmal pro Stunde. So bleibt der Lese-Teil sicher unter 50 Anfragen pro Stunde.
 4. Der erste Export-Abruf blockiert das Setup nicht (`async_refresh` statt `async_config_entry_first_refresh`), damit der Sende-Teil auch bei Netzproblemen sofort Werte einreiht.
 5. Blutdruck, Stehstunden und Achtsamkeit bekommen in v0.1.0 keine eigenen Sensoren.
 6. Der Hinweis auf Sensoren, die schon an eine andere Person senden, ist ein eigener Bestätigungsschritt.

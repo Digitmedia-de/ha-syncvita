@@ -163,6 +163,17 @@ def entity_id_for(
     return entity_id
 
 
+def mock_values_api(
+    aioclient_mock: AiohttpClientMocker,
+    stats: dict[str, Any] | None = None,
+    values: dict[str, list[dict[str, Any]]] | None = None,
+) -> None:
+    """Mock /stats and the GET endpoints of the stored values."""
+    aioclient_mock.get(f"{API}/stats", json={"success": True, "data": stats or {}})
+    for path, items in (values or {}).items():
+        aioclient_mock.get(f"{API}{path}", json={"success": True, "data": items})
+
+
 def mock_export_api(
     aioclient_mock: AiohttpClientMocker,
     today: date = date(2026, 10, 10),
@@ -172,7 +183,8 @@ def mock_export_api(
     workouts: dict[str, Any] | None = None,
     headers: dict[str, str] | None = None,
 ) -> None:
-    """Mock all export endpoints for the given local day."""
+    """Mock all export endpoints (and an empty /stats) for the given local day."""
+    mock_values_api(aioclient_mock)
     aioclient_mock.get(
         f"{API}/health-export/metrics",
         json=metrics or load_fixture("export_metrics.json"),

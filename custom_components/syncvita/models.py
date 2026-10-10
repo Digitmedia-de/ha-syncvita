@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .coordinator import SyncvitaExportCoordinator
     from .sender import SyncvitaSender
     from .store import SyncvitaStore
+    from .values import SyncvitaValuesCoordinator
 
 
 @dataclass(slots=True)
@@ -21,6 +22,7 @@ class SyncvitaRuntimeData:
     client: SyncvitaClient
     store: SyncvitaStore
     sender: SyncvitaSender
+    values: SyncvitaValuesCoordinator
     coordinator: SyncvitaExportCoordinator | None = None
 
 

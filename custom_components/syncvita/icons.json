@@ -23,7 +23,12 @@
       "stored_values": { "default": "mdi:database-outline" },
       "sleep_last_night": { "default": "mdi:sleep" },
       "last_workout": { "default": "mdi:run" },
-      "workouts_today": { "default": "mdi:dumbbell" }
+      "workouts_today": { "default": "mdi:dumbbell" },
+      "value_body_fat": { "default": "mdi:percent-outline" },
+      "value_heart_rate": { "default": "mdi:heart-pulse" },
+      "value_blood_oxygen": { "default": "mdi:water-percent" },
+      "value_steps": { "default": "mdi:shoe-print" },
+      "value_hydration": { "default": "mdi:cup-water" }
     }
   },
   "services": {

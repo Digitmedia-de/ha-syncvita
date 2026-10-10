@@ -119,7 +119,7 @@ async def test_metric_sensors(
         assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
     unknown = entity_registry.async_get(eid("new_future_type"))
     assert unknown is not None
-    assert unknown.original_name == "New future type"
+    assert unknown.original_name == "New future type (Apple Health)"
 
     for missing in ("walking_speed", "blood_pressure", "sleep_analysis", "workouts"):
         assert (
@@ -329,6 +329,13 @@ async def test_switched_off_features_remove_their_entities(
         "last_error",
         "rate_limit_remaining",
         "process_queue",
+        "value_weight",
+        "value_body_fat",
+        "value_heart_rate",
+        "value_blood_oxygen",
+        "value_blood_sugar",
+        "value_steps",
+        "value_hydration",
     }
 
 

@@ -11,9 +11,17 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import EntityCategory, UnitOfTime
+from homeassistant.const import (
+    PERCENTAGE,
+    EntityCategory,
+    UnitOfBloodGlucoseConcentration,
+    UnitOfMass,
+    UnitOfTime,
+    UnitOfVolume,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -25,6 +33,7 @@ from .const import (
     export_unit,
 )
 from .entity import SyncvitaExportEntity, device_info
+from .values import VALUE_TYPES, SyncvitaValuesCoordinator, ValueReading, ValueType
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -93,6 +102,56 @@ SENDER_SENSORS: tuple[SyncvitaSenderSensorDescription, ...] = (
 )
 
 
+VALUE_SENSORS: dict[str, SensorEntityDescription] = {
+    "weight": SensorEntityDescription(
+        key="weight",
+        translation_key="value_weight",
+        device_class=SensorDeviceClass.WEIGHT,
+        native_unit_of_measurement=UnitOfMass.KILOGRAMS,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    "body_fat": SensorEntityDescription(
+        key="body_fat",
+        translation_key="value_body_fat",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    "heart_rate": SensorEntityDescription(
+        key="heart_rate",
+        translation_key="value_heart_rate",
+        native_unit_of_measurement="bpm",
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    "blood_oxygen": SensorEntityDescription(
+        key="blood_oxygen",
+        translation_key="value_blood_oxygen",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    "blood_sugar": SensorEntityDescription(
+        key="blood_sugar",
+        translation_key="value_blood_sugar",
+        device_class=SensorDeviceClass.BLOOD_GLUCOSE_CONCENTRATION,
+        native_unit_of_measurement=(
+            UnitOfBloodGlucoseConcentration.MILLIGRAMS_PER_DECILITER
+        ),
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    "steps": SensorEntityDescription(
+        key="steps",
+        translation_key="value_steps",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    "hydration": SensorEntityDescription(
+        key="hydration",
+        translation_key="value_hydration",
+        device_class=SensorDeviceClass.VOLUME,
+        native_unit_of_measurement=UnitOfVolume.MILLILITERS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+}
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: SyncvitaConfigEntry,
@@ -101,6 +160,10 @@ async def async_setup_entry(
     """Set up the sensors."""
     async_add_entities(
         SyncvitaSenderSensor(entry, description) for description in SENDER_SENSORS
+    )
+    async_add_entities(
+        SyncvitaValueSensor(entry.runtime_data.values, value_type)
+        for value_type in VALUE_TYPES
     )
     coordinator = entry.runtime_data.coordinator
     if coordinator is None:
@@ -174,6 +237,53 @@ class SyncvitaSenderSensor(SensorEntity):
         if self.entity_description.attrs_fn is None:
             return None
         return self.entity_description.attrs_fn(self._data)
+
+
+class SyncvitaValueSensor(CoordinatorEntity[SyncvitaValuesCoordinator], SensorEntity):
+    """Latest value (or today's total) of one value type stored in Syncvita."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self, coordinator: SyncvitaValuesCoordinator, value_type: ValueType
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        entry = coordinator.config_entry
+        self.entity_description = VALUE_SENSORS[value_type.key]
+        self._value_type = value_type
+        self._attr_unique_id = f"{entry.entry_id}_value_{value_type.key}"
+        self._attr_device_info = device_info(entry)
+
+    @property
+    def _reading(self) -> ValueReading | None:
+        return (self.coordinator.data or {}).get(self._value_type.key)
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the latest value; for steps and hydration the total of today."""
+        reading = self._reading
+        if reading is None:
+            return None
+        if self._value_type.daily and reading.day != dt_util.now().date():
+            return 0
+        return reading.value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the measurement time and, for single values, the stale flag."""
+        reading = self._reading
+        if reading is None:
+            return {}
+        measured_at = reading.measured_at
+        attributes: dict[str, Any] = {
+            "measured_at": measured_at.isoformat() if measured_at else None
+        }
+        if not self._value_type.daily:
+            attributes["stale"] = (
+                measured_at is None or dt_util.now() - measured_at > STALE_AFTER
+            )
+        return attributes
 
 
 class SyncvitaLastUploadSensor(SyncvitaExportEntity, SensorEntity):
@@ -251,7 +361,8 @@ class SyncvitaMetricSensor(SyncvitaExportEntity, SensorEntity):
         if info.metric in KNOWN_METRICS:
             self._attr_translation_key = info.metric
         else:
-            self._attr_name = info.metric.replace("_", " ").capitalize()
+            name = info.metric.replace("_", " ").capitalize()
+            self._attr_name = f"{name} (Apple Health)"
 
     @property
     def _info(self) -> MetricInfo | None:
