@@ -1,0 +1,29 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Version prüfen
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(jq -r .version custom_components/syncvita/manifest.json)"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zur manifest.json-Version $version"
+            exit 1
+          fi
+      - name: ZIP bauen
+        run: |
+          cd custom_components/syncvita
+          zip -r "$GITHUB_WORKSPACE/syncvita.zip" . -x "__pycache__/*"
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: syncvita.zip
