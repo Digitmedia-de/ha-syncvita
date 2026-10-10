@@ -6,7 +6,7 @@ from datetime import date, timedelta
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, PropertyMock, patch
 
 from homeassistant.const import CONF_API_KEY, CONF_NAME
 import pytest
@@ -108,6 +108,17 @@ def source_states(hass: HomeAssistant) -> None:
     """Initial states of the mapped source sensors (sensor.water stays missing)."""
     hass.states.async_set("sensor.scale_weight", "80.0", WEIGHT_ATTRS)
     hass.states.async_set("sensor.scale_fat", "20.0", FAT_ATTRS)
+
+
+@pytest.fixture
+def entity_registry_enabled_by_default() -> Generator[None]:
+    """Enable all entities, including those disabled by default."""
+    with patch(
+        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
+        return_value=True,
+        new_callable=PropertyMock,
+    ):
+        yield
 
 
 @pytest.fixture
