@@ -1,0 +1,51 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# --- Virtuelle Umgebungen ---
+.venv/
+venv/
+env/
+
+# --- Werkzeug-Caches ---
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# --- Testabdeckung ---
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- Secrets und lokale Umgebung ---
+.env
+.env.*
+*.key
+secrets.yaml
+
+# --- Rohdaten aus scripts/capture_fixtures.py (nicht anonymisiert) ---
+tests/fixtures/_raw/
+
+# --- Release-Artefakte ---
+syncvita.zip
+
+# --- Lokale HA-Testinstanz ---
+config/
+
+# --- Lokale Planungsdokumente und KI-Werkzeuge ---
+SPEC.md
+openapi-spec.json
+docs/superpowers/
+.claude/
+CLAUDE.local.md
+
+# --- Editoren und Betriebssystem ---
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

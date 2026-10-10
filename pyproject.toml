@@ -1,0 +1,35 @@
+[project]
+name = "ha-syncvita"
+version = "0.1.0"
+description = "Home-Assistant-Integration für Syncvita"
+requires-python = ">=3.14.2"
+license = "MIT"
+
+[tool.ruff]
+target-version = "py314"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["ASYNC", "B", "D", "E", "F", "I", "PL", "RUF", "SIM", "TC", "UP", "W"]
+ignore = ["D202", "D203", "D213", "PLR0911", "PLR0912", "PLR0913", "PLR2004"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "PLR2004"]
+"scripts/**" = ["D", "PLR2004"]
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components.syncvita"]
+combine-as-imports = true
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unreachable = true
+files = ["custom_components/syncvita"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+addopts = "--cov=custom_components.syncvita --cov-report=term-missing --cov-fail-under=90"
