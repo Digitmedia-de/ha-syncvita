@@ -12,6 +12,7 @@ from .api import SyncvitaClient
 from .const import CONF_READ_ENABLED, DOMAIN
 from .coordinator import SyncvitaExportCoordinator
 from .models import SyncvitaConfigEntry, SyncvitaRuntimeData
+from .repairs import async_setup_missing_sensor_checks
 from .sender import SyncvitaSender
 from .services import async_setup_services
 from .store import SyncvitaStore
@@ -53,6 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: SyncvitaConfigEntry) -> 
         await coordinator.async_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     sender.async_start()
+    async_setup_missing_sensor_checks(hass, entry)
     return True
 
 
