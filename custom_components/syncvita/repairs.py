@@ -25,12 +25,26 @@ def _issue_id(entry_id: str, measure: str) -> str:
 
 
 @callback
+def async_delete_issues(hass: HomeAssistant, entry_id: str) -> None:
+    """Delete every repair issue of a config entry."""
+    for measure in Measure:
+        ir.async_delete_issue(hass, DOMAIN, _issue_id(entry_id, measure.value))
+    ir.async_delete_issue(hass, DOMAIN, f"expired_entries_{entry_id}")
+
+
+@callback
 def async_check_missing_sensors(
     hass: HomeAssistant, entry: SyncvitaConfigEntry, removed: str | None = None
 ) -> None:
     """Create or delete one issue per mapped sensor that no longer exists."""
     registry = er.async_get(hass)
-    for measure, entity_id in entry.options.get(CONF_SENSORS, {}).items():
+    sensors: dict[str, str] = entry.options.get(CONF_SENSORS, {})
+    for unmapped in Measure:
+        if unmapped.value not in sensors:
+            ir.async_delete_issue(
+                hass, DOMAIN, _issue_id(entry.entry_id, unmapped.value)
+            )
+    for measure, entity_id in sensors.items():
         issue_id = _issue_id(entry.entry_id, measure)
         missing = entity_id == removed or (
             registry.async_get(entity_id) is None and hass.states.get(entity_id) is None

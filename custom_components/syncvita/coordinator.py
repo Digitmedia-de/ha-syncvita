@@ -299,7 +299,7 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
         except SyncvitaAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except SyncvitaExportDisabledError:
-            data = ExportData(enabled=False)
+            data = self._export_disabled()
         except SyncvitaError as err:
             raise UpdateFailed(f"Error talking to Syncvita: {err}") from err
         except (KeyError, TypeError, ValueError) as err:
@@ -312,7 +312,7 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
     async def _async_fetch(self, now: datetime) -> ExportData:
         raw = await self._client.async_get_export_metrics()
         if not raw.get("enabled", True):
-            return ExportData(enabled=False)
+            return self._export_disabled()
         metrics = {
             info.metric: info
             for info in (MetricInfo.from_api(entry) for entry in raw.get("metrics", []))
@@ -334,18 +334,18 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
         )
         today = dt_util.now().date()
         options = self.config_entry.options
-        if options.get(CONF_SLEEP_ENABLED, True) and self._daily_due(
-            METRIC_SLEEP, metrics, now
-        ):
+        sleep_active = options.get(CONF_SLEEP_ENABLED, True) and METRIC_SLEEP in metrics
+        if sleep_active and self._daily_due(METRIC_SLEEP, metrics, now):
             daily = await self._client.async_get_export_daily(
                 METRIC_SLEEP, today - timedelta(days=1), today
             )
             nights = [SleepNight.from_api(night) for night in daily.get("nights", [])]
             data.sleep = max(nights, key=lambda night: night.night, default=None)
             self._async_handle_sleep(data.sleep)
-        if options.get(CONF_WORKOUTS_ENABLED, True) and self._daily_due(
-            METRIC_WORKOUTS, metrics, now
-        ):
+        workouts_active = (
+            options.get(CONF_WORKOUTS_ENABLED, True) and METRIC_WORKOUTS in metrics
+        )
+        if workouts_active and self._daily_due(METRIC_WORKOUTS, metrics, now):
             daily = await self._client.async_get_export_daily(
                 METRIC_WORKOUTS,
                 today - timedelta(days=WORKOUT_LOOKBACK_DAYS - 1),
@@ -358,9 +358,20 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
             )
             self._async_handle_workouts(data.workouts)
         self._signatures = {name: info.signature for name, info in metrics.items()}
-        if not self._store.export_initialized:
-            self._store.mark_export_initialized()
+        # Only a stream that was really read counts as initialized. A stream
+        # switched on later starts silently instead of announcing old items.
+        if sleep_active:
+            self._store.mark_stream_initialized(METRIC_SLEEP)
+        if workouts_active:
+            self._store.mark_stream_initialized(METRIC_WORKOUTS)
         return data
+
+    def _export_disabled(self) -> ExportData:
+        # Forget what was loaded, so that daily data is read again right away
+        # once the export is enabled again.
+        self._signatures = {}
+        self._daily_fetched = {}
+        return ExportData(enabled=False)
 
     def _daily_due(
         self, metric: str, metrics: Mapping[str, MetricInfo], now: datetime
@@ -388,8 +399,8 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
         ]
         if not new:
             return
-        if not self._store.export_initialized:
-            # First contact with this export: everything already there is old.
+        if not self._store.is_stream_initialized(METRIC_WORKOUTS):
+            # First contact with this stream: everything already there is old.
             self._store.add_seen_workouts(workout.uuid for workout in new)
         elif not self._announcing:
             self._pending_workouts.update((workout.uuid, workout) for workout in new)
@@ -412,7 +423,7 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
             last = max(last or "", self._pending_night.night)
         if night is None or (last is not None and night.night <= last):
             return
-        if not self._store.export_initialized:
+        if not self._store.is_stream_initialized(METRIC_SLEEP):
             self._store.set_last_sleep_night(night.night)
         elif not self._announcing:
             self._pending_night = night

@@ -102,16 +102,21 @@ response_variable: ergebnis
 
 ## Datenschutz und Recorder
 
-Die gelesenen Gesundheitswerte landen wie alle Zustände im Home-Assistant-Recorder. Wer das nicht möchte, schließt die Entitäten aus:
+Die gelesenen Gesundheitswerte landen wie alle Zustände im Home-Assistant-Recorder. Das gilt auch für die Ereignis-Entitäten (Workout, Schlaf) und den Binärsensor „Export aktiv“. Zusätzlich speichert der Recorder die Bus-Ereignisse `syncvita_workout_finished` und `syncvita_sleep_recorded` samt Inhalt in seiner `events`-Tabelle. Wer das nicht möchte, schließt Entitäten und Ereignistypen aus:
 
 ```yaml
 recorder:
   exclude:
     entity_globs:
       - sensor.syncvita_*
-    entities:
-      - event.syncvita_tim_workout
+      - event.syncvita_*
+      - binary_sensor.syncvita_*
+    event_types:
+      - syncvita_workout_finished
+      - syncvita_sleep_recorded
 ```
+
+Die Globs passen, solange die Entity-IDs mit `syncvita_` beginnen. Wer sie umbenannt hat, ergänzt die eigenen IDs unter `entities:`.
 
 Diagnosedaten enthalten nur Typnamen, Anzahlen und Zeitpunkte, keine Messwerte und keinen API-Key.
 

@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+import pytest
+
 from custom_components.syncvita.const import SENT_KEYS_PER_SOURCE
 from custom_components.syncvita.store import QueuedEntry, SyncvitaStore
 
@@ -88,3 +90,38 @@ async def test_remove(hass: HomeAssistant, hass_storage: dict[str, Any]) -> None
     await store.async_save()
     await store.async_remove()
     assert "syncvita.entry1" not in hass_storage
+
+
+async def test_streams_are_initialized_separately(
+    hass: HomeAssistant, hass_storage: dict[str, Any]
+) -> None:
+    store = SyncvitaStore(hass, "entry1")
+    await store.async_load()
+    store.mark_stream_initialized("workouts")
+    store.mark_stream_initialized("workouts")
+    await store.async_save()
+
+    loaded = SyncvitaStore(hass, "entry1")
+    await loaded.async_load()
+    assert loaded.is_stream_initialized("workouts")
+    assert not loaded.is_stream_initialized("sleep_analysis")
+    assert loaded.export_initialized is False
+
+
+@pytest.mark.parametrize(("legacy", "expected"), [(True, True), (False, False)])
+async def test_legacy_export_initialized_key(
+    hass: HomeAssistant,
+    hass_storage: dict[str, Any],
+    legacy: bool,
+    expected: bool,
+) -> None:
+    hass_storage["syncvita.legacy"] = {
+        "version": 1,
+        "key": "syncvita.legacy",
+        "data": {"export_initialized": legacy},
+    }
+    store = SyncvitaStore(hass, "legacy")
+    await store.async_load()
+    assert store.is_stream_initialized("workouts") is expected
+    assert store.is_stream_initialized("sleep_analysis") is expected
+    assert store.export_initialized is expected

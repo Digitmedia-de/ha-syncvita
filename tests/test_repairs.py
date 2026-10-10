@@ -122,3 +122,47 @@ async def test_fix_flow_entry_removed(
     result = await flow.async_step_init()
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "entry_removed"
+
+
+async def test_issue_deleted_when_mapping_removed(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    await setup_integration(hass, mock_config_entry)
+    issue_id = _issue_id(mock_config_entry, "hydration")
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is not None
+
+    sensors = dict(mock_config_entry.options[CONF_SENSORS])
+    del sensors["hydration"]
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={**mock_config_entry.options, CONF_SENSORS: sensors},
+    )
+    assert await hass.config_entries.async_reload(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_issues_deleted_when_entry_removed(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    await setup_integration(hass, mock_config_entry)
+    expired_id = f"expired_entries_{mock_config_entry.entry_id}"
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        expired_id,
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="expired_entries",
+    )
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(DOMAIN, _issue_id(mock_config_entry, "hydration"))
+
+    assert await hass.config_entries.async_remove(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+    assert issues.async_get_issue(DOMAIN, expired_id) is None
+    assert not [
+        issue_id
+        for (domain, issue_id) in issues.issues
+        if domain == DOMAIN and mock_config_entry.entry_id in issue_id
+    ]

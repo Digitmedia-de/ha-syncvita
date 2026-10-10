@@ -11,7 +11,11 @@ from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.helpers import entity_registry as er
 import pytest
 
-from custom_components.syncvita.const import CONF_READ_ENABLED, CONF_SLEEP_ENABLED
+from custom_components.syncvita.const import (
+    CONF_READ_ENABLED,
+    CONF_SLEEP_ENABLED,
+    CONF_WORKOUTS_ENABLED,
+)
 
 from .conftest import (
     API,
@@ -276,6 +280,56 @@ async def test_disabled_options_skip_entities(
             )
             is None
         )
+
+
+async def _reload_with(
+    hass: HomeAssistant, entry: MockConfigEntry, **options: Any
+) -> None:
+    hass.config_entries.async_update_entry(entry, options={**entry.options, **options})
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+def _keys(entity_registry: er.EntityRegistry, entry: MockConfigEntry) -> set[str]:
+    prefix = f"{entry.entry_id}_"
+    return {
+        entity.unique_id.removeprefix(prefix)
+        for entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id)
+    }
+
+
+async def test_switched_off_features_remove_their_entities(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    export_config_entry: MockConfigEntry,
+    entity_registry: er.EntityRegistry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    await _setup(hass, aioclient_mock, export_config_entry, freezer)
+    sleep = {"sleep_last_night", "sleep"}
+    workout = {"last_workout", "workouts_today", "workout"}
+    keys = _keys(entity_registry, export_config_entry)
+    assert sleep | workout | {"export_active", "metric_resting_heart_rate"} <= keys
+
+    await _reload_with(hass, export_config_entry, **{CONF_SLEEP_ENABLED: False})
+    keys = _keys(entity_registry, export_config_entry)
+    assert not keys & sleep
+    assert workout <= keys
+
+    await _reload_with(hass, export_config_entry, **{CONF_WORKOUTS_ENABLED: False})
+    keys = _keys(entity_registry, export_config_entry)
+    assert not keys & (sleep | workout)
+    assert "export_active" in keys
+
+    await _reload_with(hass, export_config_entry, **{CONF_READ_ENABLED: False})
+    assert _keys(entity_registry, export_config_entry) == {
+        "last_transfer",
+        "sent_values",
+        "queue",
+        "last_error",
+        "rate_limit_remaining",
+        "process_queue",
+    }
 
 
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")

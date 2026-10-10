@@ -429,3 +429,86 @@ async def test_requests_per_hour_stay_below_30(
     assert calls_to(aioclient_mock, "/health-export/metrics") == 5
     assert aioclient_mock.call_count < 30
     unsub()
+
+
+async def test_stream_switched_on_later_starts_silently(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Enabling workouts/sleep later must not announce the existing items."""
+    freezer.move_to(NOW)
+    entry = make_entry(
+        **{
+            CONF_READ_ENABLED: True,
+            CONF_SLEEP_ENABLED: False,
+            CONF_WORKOUTS_ENABLED: False,
+        }
+    )
+    mock_export_api(aioclient_mock)
+    workout_events = async_capture_events(hass, EVENT_WORKOUT_FINISHED)
+    sleep_events = async_capture_events(hass, EVENT_SLEEP_RECORDED)
+    await setup_integration(hass, entry)
+    store = entry.runtime_data.store
+    assert not store.is_stream_initialized("workouts")
+    assert not store.is_stream_initialized("sleep_analysis")
+    assert not store.export_initialized
+
+    hass.config_entries.async_update_entry(
+        entry,
+        options={
+            **entry.options,
+            CONF_SLEEP_ENABLED: True,
+            CONF_WORKOUTS_ENABLED: True,
+        },
+    )
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    store = entry.runtime_data.store
+    assert workout_events == []
+    assert sleep_events == []
+    assert store.export_initialized
+    assert store.seen_workouts == [W2, W1]
+    assert store.last_sleep_night == "2026-10-10"
+
+    aioclient_mock.clear_requests()
+    mock_export_api(
+        aioclient_mock,
+        metrics=_metrics_with("workouts", count=3),
+        workouts=_workouts_with_new(),
+    )
+    await _refresh(hass, entry)
+    assert [event.data["uuid"] for event in workout_events] == [W3]
+
+
+async def test_export_enabled_again_loads_daily_data_at_once(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    export_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    freezer.move_to(NOW)
+    mock_export_api(aioclient_mock)
+    await setup_integration(hass, export_config_entry)
+
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(
+        f"{API}/health-export/metrics",
+        status=403,
+        json={"success": False, "error": {"code": "EXPORT_DISABLED", "message": "off"}},
+    )
+    await _refresh(hass, export_config_entry)
+    coordinator = export_config_entry.runtime_data.coordinator
+    assert coordinator is not None
+    assert coordinator.data.enabled is False
+
+    # Same metrics as before, a few minutes later: still read the daily data.
+    freezer.tick(timedelta(minutes=15))
+    aioclient_mock.clear_requests()
+    mock_export_api(aioclient_mock)
+    await _refresh(hass, export_config_entry)
+    assert coordinator.data.enabled
+    assert calls_to(aioclient_mock, "/health-export/daily", "sleep_analysis") == 1
+    assert calls_to(aioclient_mock, "/health-export/daily", "workouts") == 1
+    assert coordinator.data.sleep is not None
+    assert [workout.uuid for workout in coordinator.data.workouts] == [W1, W2]

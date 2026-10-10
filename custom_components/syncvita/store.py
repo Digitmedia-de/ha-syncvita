@@ -8,13 +8,21 @@ from typing import TYPE_CHECKING, Any, TypedDict
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN, SEEN_WORKOUTS_MAX, SENT_KEYS_PER_SOURCE
+from .const import (
+    DOMAIN,
+    METRIC_SLEEP,
+    METRIC_WORKOUTS,
+    SEEN_WORKOUTS_MAX,
+    SENT_KEYS_PER_SOURCE,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
 STORAGE_VERSION = 1
 SAVE_DELAY_SECONDS = 1
+# Export streams whose new items fire events (workouts, sleep).
+EXPORT_STREAMS: tuple[str, ...] = (METRIC_WORKOUTS, METRIC_SLEEP)
 
 
 class QueuedEntry(TypedDict):
@@ -43,7 +51,7 @@ class SyncvitaStore:
         self.last_success: datetime | None = None
         self.seen_workouts: list[str] = []
         self.last_sleep_night: str | None = None
-        self.export_initialized = False
+        self.initialized_streams: set[str] = set()
 
     async def async_load(self) -> None:
         """Load the persisted state."""
@@ -57,7 +65,20 @@ class SyncvitaStore:
         )
         self.seen_workouts = data.get("seen_workouts", [])
         self.last_sleep_night = data.get("last_sleep_night")
-        self.export_initialized = data.get("export_initialized", False)
+        streams = data.get("initialized_streams")
+        if streams is None:
+            # Stored before streams were tracked separately.
+            streams = EXPORT_STREAMS if data.get("export_initialized") else ()
+        self.initialized_streams = set(streams)
+
+    @property
+    def export_initialized(self) -> bool:
+        """Return True once every export stream had its first read."""
+        return self.initialized_streams.issuperset(EXPORT_STREAMS)
+
+    def is_stream_initialized(self, stream: str) -> bool:
+        """Return True if new items of the stream fire events."""
+        return stream in self.initialized_streams
 
     def is_known(self, source: str, key: str) -> bool:
         """Return True if the value was already sent or is queued."""
@@ -89,10 +110,17 @@ class SyncvitaStore:
         self.last_sleep_night = night
         self.async_schedule_save()
 
-    def mark_export_initialized(self) -> None:
-        """Mark that the first export read is done; later reads fire events."""
-        self.export_initialized = True
+    def mark_stream_initialized(self, stream: str) -> None:
+        """Mark the first read of a stream as done; later reads fire events."""
+        if stream in self.initialized_streams:
+            return
+        self.initialized_streams.add(stream)
         self.async_schedule_save()
+
+    def mark_export_initialized(self) -> None:
+        """Mark the first read of every export stream as done."""
+        for stream in EXPORT_STREAMS:
+            self.mark_stream_initialized(stream)
 
     @callback
     def async_schedule_save(self) -> None:
@@ -117,5 +145,6 @@ class SyncvitaStore:
             else None,
             "seen_workouts": self.seen_workouts,
             "last_sleep_night": self.last_sleep_night,
+            "initialized_streams": sorted(self.initialized_streams),
             "export_initialized": self.export_initialized,
         }
