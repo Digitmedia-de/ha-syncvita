@@ -119,6 +119,24 @@ async def test_export_settings_failure_does_not_block(
     assert result["options"][CONF_READ_ENABLED] is True
 
 
+async def test_export_settings_unauthorized(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    aioclient_mock.get(f"{API}/stats", json={"success": True})
+    aioclient_mock.get(
+        f"{API}/health-export/settings",
+        status=401,
+        json={"success": False, "error": {"code": "UNAUTHORIZED", "message": "x"}},
+    )
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], ACCOUNT)
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    assert result["errors"] == {"base": "invalid_auth"}
+
+
 @pytest.mark.parametrize(
     ("mock_kwargs", "error"),
     [
