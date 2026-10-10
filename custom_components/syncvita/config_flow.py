@@ -7,14 +7,28 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, CONF_API_KEY, CONF_NAME
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
+from homeassistant.const import (
+    ATTR_UNIT_OF_MEASUREMENT,
+    CONF_API_KEY,
+    CONF_NAME,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -40,6 +54,9 @@ from .const import (
     DEFAULT_NOTIFY_ERRORS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MAX_MAX_AGE_HOURS,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
 )
 from .measures import MEASURES, Measure
 
@@ -53,6 +70,37 @@ STEP_USER_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): TextSelector(),
         vol.Required(CONF_API_KEY): API_KEY_SELECTOR,
+    }
+)
+STEP_REAUTH_SCHEMA = vol.Schema({vol.Required(CONF_API_KEY): API_KEY_SELECTOR})
+SENDING_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_NOTIFY_ERRORS): BooleanSelector(),
+        vol.Required(CONF_MAX_AGE_HOURS): NumberSelector(
+            NumberSelectorConfig(
+                min=1,
+                max=MAX_MAX_AGE_HOURS,
+                step=1,
+                unit_of_measurement=UnitOfTime.HOURS,
+                mode=NumberSelectorMode.BOX,
+            )
+        ),
+    }
+)
+EXPORT_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_READ_ENABLED): BooleanSelector(),
+        vol.Required(CONF_SCAN_INTERVAL): NumberSelector(
+            NumberSelectorConfig(
+                min=MIN_SCAN_INTERVAL,
+                max=MAX_SCAN_INTERVAL,
+                step=1,
+                unit_of_measurement=UnitOfTime.MINUTES,
+                mode=NumberSelectorMode.SLIDER,
+            )
+        ),
+        vol.Required(CONF_SLEEP_ENABLED): BooleanSelector(),
+        vol.Required(CONF_WORKOUTS_ENABLED): BooleanSelector(),
     }
 )
 
@@ -187,6 +235,81 @@ class SyncvitaConfigFlow(ConfigFlow, domain=DOMAIN):
         self._sensors: dict[str, str] = {}
         self._shared: list[str] = []
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> SyncvitaOptionsFlow:
+        """Return the options flow."""
+        return SyncvitaOptionsFlow()
+
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """Start reauthentication after a 401."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for a new API key."""
+        entry = self._get_reauth_entry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            api_key = user_input[CONF_API_KEY]
+            unique_id = unique_id_for_key(api_key)
+            if self._key_used_elsewhere(unique_id, entry):
+                return self.async_abort(reason="already_configured")
+            errors, _ = await async_validate_api_key(self.hass, api_key)
+            if not errors:
+                return self.async_update_reload_and_abort(
+                    entry, unique_id=unique_id, data_updates={CONF_API_KEY: api_key}
+                )
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=STEP_REAUTH_SCHEMA,
+            errors=errors,
+            description_placeholders={"name": entry.title},
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change name and API key without removing the entry."""
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            api_key = user_input.get(CONF_API_KEY) or entry.data[CONF_API_KEY]
+            unique_id = unique_id_for_key(api_key)
+            if self._key_used_elsewhere(unique_id, entry):
+                return self.async_abort(reason="already_configured")
+            if api_key != entry.data[CONF_API_KEY]:
+                errors, _ = await async_validate_api_key(self.hass, api_key)
+            if not errors:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    unique_id=unique_id,
+                    title=user_input[CONF_NAME],
+                    data_updates={
+                        CONF_NAME: user_input[CONF_NAME],
+                        CONF_API_KEY: api_key,
+                    },
+                )
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_NAME, default=entry.title): TextSelector(),
+                vol.Optional(CONF_API_KEY): API_KEY_SELECTOR,
+            }
+        )
+        return self.async_show_form(
+            step_id="reconfigure", data_schema=schema, errors=errors
+        )
+
+    @callback
+    def _key_used_elsewhere(self, unique_id: str, entry: ConfigEntry) -> bool:
+        other = self.hass.config_entries.async_entry_for_domain_unique_id(
+            DOMAIN, unique_id
+        )
+        return other is not None and other.entry_id != entry.entry_id
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -250,3 +373,85 @@ class SyncvitaConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_SENSORS: self._sensors,
             },
         )
+
+
+class SyncvitaOptionsFlow(OptionsFlowWithReload):
+    """Options of a Syncvita entry; the entry reloads after saving."""
+
+    def __init__(self) -> None:
+        """Initialize the options flow."""
+        self._sensors: dict[str, str] = {}
+        self._shared: list[str] = []
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show the options menu."""
+        return self.async_show_menu(
+            step_id="init", menu_options=["sensors", "sending", "export"]
+        )
+
+    async def async_step_sensors(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change the sensor mapping."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            self._sensors, errors = validate_sensors(self.hass, user_input)
+            if not errors:
+                self._shared = shared_sensors(
+                    self.hass, self._sensors, self.config_entry.entry_id
+                )
+                if self._shared:
+                    return await self.async_step_sensors_confirm()
+                return self._async_save({CONF_SENSORS: self._sensors})
+        current = user_input or self.config_entry.options.get(CONF_SENSORS, {})
+        return self.async_show_form(
+            step_id="sensors",
+            data_schema=sensors_schema(self.hass, current),
+            errors=errors,
+        )
+
+    async def async_step_sensors_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Warn about sensors that already send to another person."""
+        if user_input is not None:
+            return self._async_save({CONF_SENSORS: self._sensors})
+        return self.async_show_form(
+            step_id="sensors_confirm",
+            description_placeholders={"entities": ", ".join(self._shared)},
+        )
+
+    async def async_step_sending(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change notification and queue age settings."""
+        if user_input is not None:
+            # NumberSelector returns floats; options store whole hours.
+            hours = int(user_input[CONF_MAX_AGE_HOURS])
+            return self._async_save({**user_input, CONF_MAX_AGE_HOURS: hours})
+        return self.async_show_form(
+            step_id="sending",
+            data_schema=self.add_suggested_values_to_schema(
+                SENDING_SCHEMA, self.config_entry.options
+            ),
+        )
+
+    async def async_step_export(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Change the Apple Health export settings."""
+        if user_input is not None:
+            minutes = int(user_input[CONF_SCAN_INTERVAL])
+            return self._async_save({**user_input, CONF_SCAN_INTERVAL: minutes})
+        return self.async_show_form(
+            step_id="export",
+            data_schema=self.add_suggested_values_to_schema(
+                EXPORT_SCHEMA, self.config_entry.options
+            ),
+        )
+
+    @callback
+    def _async_save(self, changes: Mapping[str, Any]) -> ConfigFlowResult:
+        return self.async_create_entry(data={**self.config_entry.options, **changes})
