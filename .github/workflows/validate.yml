@@ -7,7 +7,11 @@ on:
     - cron: "0 4 * * *"
   workflow_dispatch:
 
-permissions: {}
+# The repository is private: checkout and the HACS action need read access.
+# Until the brand images, description and topics exist (plan Task 14, steps
+# 1, 2 and 6), the HACS job is expected to fail on those checks.
+permissions:
+  contents: read
 
 jobs:
   hacs:

@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 import aiohttp
 from homeassistant.config_entries import SOURCE_REAUTH
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import CoreState
 from homeassistant.util import dt as dt_util
 import pytest
 from pytest_homeassistant_custom_component.common import (
@@ -29,6 +31,7 @@ from custom_components.syncvita.const import (
 from .conftest import (
     API,
     calls_to,
+    entity_id_for,
     load_fixture,
     make_entry,
     mock_export_api,
@@ -38,6 +41,7 @@ from .conftest import (
 if TYPE_CHECKING:
     from freezegun.api import FrozenDateTimeFactory
     from homeassistant.core import HomeAssistant
+    from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant_custom_component.test_util.aiohttp import (
         AiohttpClientMocker,
     )
@@ -174,6 +178,84 @@ async def test_new_workout_fires_event_once(
     assert await hass.config_entries.async_reload(export_config_entry.entry_id)
     await hass.async_block_till_done()
     assert len(events) == 1
+
+
+async def _setup_then_add_workout(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Set up once, then make the export contain the new workout W3."""
+    freezer.move_to(NOW)
+    mock_export_api(aioclient_mock)
+    await setup_integration(hass, entry)
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+    aioclient_mock.clear_requests()
+    mock_export_api(
+        aioclient_mock,
+        metrics=_metrics_with("workouts", count=3),
+        workouts=_workouts_with_new(),
+    )
+
+
+async def test_workout_found_on_setup_reaches_entity(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    export_config_entry: MockConfigEntry,
+    entity_registry: er.EntityRegistry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """A workout uploaded while the entry was not loaded is announced once."""
+    await _setup_then_add_workout(hass, aioclient_mock, export_config_entry, freezer)
+    events = async_capture_events(hass, EVENT_WORKOUT_FINISHED)
+    assert await hass.config_entries.async_setup(export_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert [event.data["uuid"] for event in events] == [W3]
+    event_id = entity_id_for(entity_registry, export_config_entry, "event", "workout")
+    state = hass.states.get(event_id)
+    assert state is not None
+    assert state.attributes["event_type"] == "workout_finished"
+    assert state.attributes["uuid"] == W3
+    assert W3 in export_config_entry.runtime_data.store.seen_workouts
+
+    await _refresh(hass, export_config_entry)
+    assert len(events) == 1
+
+
+async def test_workout_found_during_startup_waits_for_started(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    export_config_entry: MockConfigEntry,
+    entity_registry: er.EntityRegistry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Events wait for EVENT_HOMEASSISTANT_STARTED and are only then marked seen."""
+    await _setup_then_add_workout(hass, aioclient_mock, export_config_entry, freezer)
+    events = async_capture_events(hass, EVENT_WORKOUT_FINISHED)
+    hass.set_state(CoreState.starting)
+    assert await hass.config_entries.async_setup(export_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    store = export_config_entry.runtime_data.store
+    assert events == []
+    assert W3 not in store.seen_workouts
+    # A refresh before the start must not announce or queue the workout twice.
+    freezer.tick(timedelta(hours=1))
+    await _refresh(hass, export_config_entry)
+    assert events == []
+
+    hass.set_state(CoreState.running)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done()
+    assert [event.data["uuid"] for event in events] == [W3]
+    assert W3 in store.seen_workouts
+    event_id = entity_id_for(entity_registry, export_config_entry, "event", "workout")
+    state = hass.states.get(event_id)
+    assert state is not None
+    assert state.attributes["uuid"] == W3
 
 
 async def test_new_night_fires_event(

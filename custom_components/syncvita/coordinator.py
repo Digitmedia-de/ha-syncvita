@@ -7,9 +7,10 @@ from datetime import UTC, datetime, timedelta
 import logging
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
@@ -257,6 +258,34 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
         self._settings_fetched: datetime | None = None
         self._signatures: dict[str, tuple[Any, ...]] = {}
         self._daily_fetched: dict[str, datetime] = {}
+        # New workouts and nights are held back until the event entities exist
+        # and Home Assistant has started (automations attach their triggers
+        # only then). They are marked as seen only once they were fired.
+        self._announcing = False
+        self._pending_workouts: dict[str, Workout] = {}
+        self._pending_night: SleepNight | None = None
+
+    @callback
+    def async_start_announcing(self) -> CALLBACK_TYPE:
+        """Fire held back events once Home Assistant has started.
+
+        Call after the platforms were set up. Returns a callback that cancels
+        the wait (for entry.async_on_unload).
+        """
+        return async_at_started(self.hass, self._async_started)
+
+    @callback
+    def _async_started(self, _hass: HomeAssistant) -> None:
+        self._announcing = True
+        pending_workouts = sorted(
+            self._pending_workouts.values(), key=lambda workout: workout.start
+        )
+        self._pending_workouts = {}
+        if pending_workouts:
+            self._async_fire_workouts(pending_workouts)
+        night, self._pending_night = self._pending_night, None
+        if night is not None:
+            self._async_fire_sleep(night)
 
     async def _async_update_data(self) -> ExportData:
         now = dt_util.utcnow()
@@ -351,24 +380,48 @@ class SyncvitaExportCoordinator(DataUpdateCoordinator[ExportData]):
 
     @callback
     def _async_handle_workouts(self, workouts: list[Workout]) -> None:
-        new = [w for w in reversed(workouts) if w.uuid not in self._store.seen_workouts]
+        new = [
+            w
+            for w in reversed(workouts)
+            if w.uuid not in self._store.seen_workouts
+            and w.uuid not in self._pending_workouts
+        ]
         if not new:
             return
-        if self._store.export_initialized:
-            for workout in new:
-                self.hass.bus.async_fire(
-                    EVENT_WORKOUT_FINISHED,
-                    workout.event_data(self.config_entry.entry_id),
-                )
-        self._store.add_seen_workouts(workout.uuid for workout in new)
+        if not self._store.export_initialized:
+            # First contact with this export: everything already there is old.
+            self._store.add_seen_workouts(workout.uuid for workout in new)
+        elif not self._announcing:
+            self._pending_workouts.update((workout.uuid, workout) for workout in new)
+        else:
+            self._async_fire_workouts(new)
+
+    @callback
+    def _async_fire_workouts(self, workouts: list[Workout]) -> None:
+        for workout in workouts:
+            self.hass.bus.async_fire(
+                EVENT_WORKOUT_FINISHED,
+                workout.event_data(self.config_entry.entry_id),
+            )
+        self._store.add_seen_workouts(workout.uuid for workout in workouts)
 
     @callback
     def _async_handle_sleep(self, night: SleepNight | None) -> None:
         last = self._store.last_sleep_night
+        if self._pending_night is not None:
+            last = max(last or "", self._pending_night.night)
         if night is None or (last is not None and night.night <= last):
             return
-        if self._store.export_initialized:
-            self.hass.bus.async_fire(
-                EVENT_SLEEP_RECORDED, night.event_data(self.config_entry.entry_id)
-            )
+        if not self._store.export_initialized:
+            self._store.set_last_sleep_night(night.night)
+        elif not self._announcing:
+            self._pending_night = night
+        else:
+            self._async_fire_sleep(night)
+
+    @callback
+    def _async_fire_sleep(self, night: SleepNight) -> None:
+        self.hass.bus.async_fire(
+            EVENT_SLEEP_RECORDED, night.event_data(self.config_entry.entry_id)
+        )
         self._store.set_last_sleep_night(night.night)

@@ -53,6 +53,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: SyncvitaConfigEntry) -> 
         # the sending part from queueing values (see README).
         await coordinator.async_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    if coordinator is not None:
+        # Events found by the first refresh are fired only now, when the event
+        # entities listen, and after Home Assistant has started.
+        entry.async_on_unload(coordinator.async_start_announcing())
     sender.async_start()
     async_setup_missing_sensor_checks(hass, entry)
     return True
