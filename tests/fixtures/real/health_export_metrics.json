@@ -1,0 +1,271 @@
+{
+  "status": 200,
+  "headers": {
+    "X-RateLimit-Limit": "250",
+    "X-RateLimit-Remaining": "249",
+    "X-RateLimit-Reset": "1791651418"
+  },
+  "body": {
+    "success": true,
+    "message": "Health export metrics",
+    "data": {
+      "enabled": true,
+      "last_upload_at": "2026-10-10 15:44:11",
+      "metrics": [
+        {
+          "metric": "body_mass",
+          "kind": "quantity",
+          "unit": "kg",
+          "cumulative": false,
+          "count": 1460,
+          "first_date": "2014-07-07",
+          "last_date": "2025-12-17",
+          "latest": {
+            "value": 82.99,
+            "date": "2025-12-17",
+            "time": "18:26:00"
+          }
+        },
+        {
+          "metric": "body_fat_percentage",
+          "kind": "quantity",
+          "unit": "%",
+          "cumulative": false,
+          "count": 509,
+          "first_date": "2014-07-07",
+          "last_date": "2025-10-11",
+          "latest": {
+            "value": 0,
+            "date": "2025-10-11",
+            "time": "02:00:00"
+          }
+        },
+        {
+          "metric": "body_mass_index",
+          "kind": "quantity",
+          "unit": "count",
+          "cumulative": false,
+          "count": 1216,
+          "first_date": "2014-07-07",
+          "last_date": "2025-06-09",
+          "latest": {
+            "value": 29.08,
+            "date": "2025-06-09",
+            "time": "10:22:37"
+          }
+        },
+        {
+          "metric": "height",
+          "kind": "quantity",
+          "unit": "cm",
+          "cumulative": false,
+          "count": 5,
+          "first_date": "2014-07-07",
+          "last_date": "2020-04-23",
+          "latest": {
+            "value": 179,
+            "date": "2020-04-23",
+            "time": "18:16:40"
+          }
+        },
+        {
+          "metric": "heart_rate",
+          "kind": "quantity",
+          "unit": "count/min",
+          "cumulative": false,
+          "count": 1063876,
+          "first_date": "2014-07-07",
+          "last_date": "2026-10-08",
+          "latest": {
+            "value": 73,
+            "date": "2026-10-08",
+            "time": "20:26:22"
+          }
+        },
+        {
+          "metric": "resting_heart_rate",
+          "kind": "quantity",
+          "unit": "count/min",
+          "cumulative": false,
+          "count": 2240,
+          "first_date": "2020-03-27",
+          "last_date": "2026-10-08",
+          "latest": {
+            "value": 58,
+            "date": "2026-10-08",
+            "time": "00:05:09"
+          }
+        },
+        {
+          "metric": "walking_heart_rate_average",
+          "kind": "quantity",
+          "unit": "count/min",
+          "cumulative": false,
+          "count": 2022,
+          "first_date": "2020-04-24",
+          "last_date": "2026-10-08",
+          "latest": {
+            "value": 91,
+            "date": "2026-10-08",
+            "time": "00:05:09"
+          }
+        },
+        {
+          "metric": "heart_rate_variability_sdnn",
+          "kind": "quantity",
+          "unit": "ms",
+          "cumulative": false,
+          "count": 21869,
+          "first_date": "2020-04-23",
+          "last_date": "2026-10-08",
+          "latest": {
+            "value": 77.67,
+            "date": "2026-10-08",
+            "time": "18:07:01"
+          }
+        },
+        {
+          "metric": "heart_rate_recovery",
+          "kind": "quantity",
+          "unit": "count/min",
+          "cumulative": false,
+          "count": 69,
+          "first_date": "2022-08-01",
+          "last_date": "2026-04-25",
+          "latest": {
+            "value": 40.54,
+            "date": "2026-04-25",
+            "time": "13:07:57"
+          }
+        },
+        {
+          "metric": "oxygen_saturation",
+          "kind": "quantity",
+          "unit": "%",
+          "cumulative": false,
+          "count": 9944,
+          "first_date": "2023-07-13",
+          "last_date": "2026-10-08",
+          "latest": {
+            "value": 110,
+            "date": "2026-10-08",
+            "time": "15:38:18"
+          }
+        },
+        {
+          "metric": "respiratory_rate",
+          "kind": "quantity",
+          "unit": "count/min",
+          "cumulative": false,
+          "count": 46983,
+          "first_date": "2021-07-26",
+          "last_date": "2026-10-08",
+          "latest": {
+            "value": 15.72,
+            "date": "2026-10-08",
+            "time": "06:46:04"
+          }
+        },
+        {
+          "metric": "body_temperature",
+          "kind": "quantity",
+          "unit": "degC",
+          "cumulative": false,
+          "count": 102,
+          "first_date": "2021-11-09",
+          "last_date": "2023-12-30",
+          "latest": {
+            "value": 42.38,
+            "date": "2023-12-30",
+            "time": "22:58:36"
+          }
+        },
+        {
+          "metric": "vo2_max",
+          "kind": "quantity",
+          "unit": "mL/(kg*min)",
+          "cumulative": false,
+          "count": 272,
+          "first_date": "2020-07-05",
+          "last_date": "2026-09-27",
+          "latest": {
+            "value": 36.33,
+            "date": "2026-09-27",
+            "time": "14:57:39"
+          }
+        },
+        {
+          "metric": "step_count",
+          "kind": "quantity",
+          "unit": "count",
+          "cumulative": true,
+          "count": 224772,
+          "first_date": "2020-03-30",
+          "last_date": "2026-10-09",
+          "latest": {
+            "value": 10,
+            "date": "2026-10-09",
+            "time": "13:33:03"
+          }
+        },
+        {
+          "metric": "distance_walking_running",
+          "kind": "quantity",
+          "unit": "m",
+          "cumulative": true,
+          "count": 286985,
+          "first_date": "2020-03-26",
+          "last_date": "2026-10-09",
+          "latest": {
+            "value": 7.95,
+            "date": "2026-10-09",
+            "time": "13:33:03"
+          }
+        },
+        {
+          "metric": "flights_climbed",
+          "kind": "quantity",
+          "unit": "count",
+          "cumulative": true,
+          "count": 35059,
+          "first_date": "2020-03-26",
+          "last_date": "2026-10-09",
+          "latest": {
+            "value": 8,
+            "date": "2026-10-09",
+            "time": "07:21:12"
+          }
+        },
+        {
+          "metric": "active_energy_burned",
+          "kind": "quantity",
+          "unit": "kcal",
+          "cumulative": true,
+          "count": 312000,
+          "first_date": "2019-03-17",
+          "last_date": "2021-06-09",
+          "latest": {
+            "value": 0.96,
+            "date": "2021-06-09",
+            "time": "17:25:30"
+          }
+        },
+        {
+          "metric": "blood_pressure",
+          "kind": "blood_pressure",
+          "unit": "mmHg",
+          "cumulative": false,
+          "count": 32,
+          "first_date": "2021-11-09",
+          "last_date": "2025-11-01",
+          "latest": {
+            "value": 108,
+            "date": "2025-11-01",
+            "time": "19:38:21",
+            "diastolic": 70
+          }
+        }
+      ]
+    }
+  }
+}

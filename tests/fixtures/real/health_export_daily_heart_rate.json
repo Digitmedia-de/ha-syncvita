@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "headers": {
+    "X-RateLimit-Limit": "250",
+    "X-RateLimit-Remaining": "246",
+    "X-RateLimit-Reset": "1791651431"
+  },
+  "body": {
+    "success": true,
+    "message": "Health export daily values",
+    "data": {
+      "metric": "heart_rate",
+      "from": "2026-10-09",
+      "to": "2026-10-10",
+      "unit": "count/min",
+      "aggregation": "stats",
+      "days": []
+    }
+  }
+}

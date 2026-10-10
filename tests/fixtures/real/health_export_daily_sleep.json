@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "headers": {
+    "X-RateLimit-Limit": "250",
+    "X-RateLimit-Remaining": "249",
+    "X-RateLimit-Reset": "1791651431"
+  },
+  "body": {
+    "success": true,
+    "message": "Health export daily values",
+    "data": {
+      "metric": "sleep_analysis",
+      "from": "2026-09-27",
+      "to": "2026-10-10",
+      "unit": "min",
+      "aggregation": "sleep",
+      "nights": []
+    }
+  }
+}

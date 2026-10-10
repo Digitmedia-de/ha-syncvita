@@ -1,0 +1,62 @@
+{
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "message": "Statistics retrieved successfully",
+    "data": {
+      "steps": {
+        "pending": 0,
+        "synced": 664,
+        "total": 676,
+        "latest": 70
+      },
+      "weight": {
+        "pending": 0,
+        "synced": 57,
+        "total": 58,
+        "latest": 76.8
+      },
+      "body_fat": {
+        "pending": 0,
+        "synced": 0,
+        "total": 0,
+        "latest": null
+      },
+      "blood_oxygen": {
+        "pending": 0,
+        "synced": 0,
+        "total": 0,
+        "latest": null
+      },
+      "blood_sugar": {
+        "pending": 0,
+        "synced": 0,
+        "total": 0,
+        "latest": null
+      },
+      "heart_rate": {
+        "pending": 0,
+        "synced": 0,
+        "total": 0,
+        "latest": null
+      },
+      "hydration": {
+        "pending": 0,
+        "synced": 0,
+        "total": 0,
+        "latest": null
+      },
+      "push_notification_tokens": 2,
+      "rate_limit": {
+        "limit": 222,
+        "used": 0,
+        "remaining": 285,
+        "reset_in_seconds": 0,
+        "is_custom": false,
+        "by_endpoint": []
+      },
+      "identifier": "00000000"
+    }
+  }
+}

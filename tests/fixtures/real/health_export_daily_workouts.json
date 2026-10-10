@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "headers": {
+    "X-RateLimit-Limit": "250",
+    "X-RateLimit-Remaining": "248",
+    "X-RateLimit-Reset": "1791651431"
+  },
+  "body": {
+    "success": true,
+    "message": "Health export daily values",
+    "data": {
+      "metric": "workouts",
+      "from": "2026-09-11",
+      "to": "2026-10-10",
+      "unit": null,
+      "aggregation": "workouts",
+      "workouts": []
+    }
+  }
+}
