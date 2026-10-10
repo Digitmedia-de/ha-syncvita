@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from homeassistant.core import HomeAssistant
+    from homeassistant.helpers import entity_registry as er
     from pytest_homeassistant_custom_component.test_util.aiohttp import (
         AiohttpClientMocker,
     )
@@ -137,3 +138,14 @@ def valid_key(aioclient_mock: AiohttpClientMocker) -> None:
         f"{API}/health-export/settings",
         json={"success": True, "data": {"enabled": True, "types": []}},
     )
+
+
+def entity_id_for(
+    entity_registry: er.EntityRegistry, entry: MockConfigEntry, platform: str, key: str
+) -> str:
+    """Return the entity ID of an entity of this integration by its key."""
+    entity_id = entity_registry.async_get_entity_id(
+        platform, DOMAIN, f"{entry.entry_id}_{key}"
+    )
+    assert entity_id is not None, key
+    return entity_id
