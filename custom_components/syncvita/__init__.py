@@ -13,6 +13,7 @@ from .const import CONF_READ_ENABLED, DOMAIN
 from .coordinator import SyncvitaExportCoordinator
 from .models import SyncvitaConfigEntry, SyncvitaRuntimeData
 from .sender import SyncvitaSender
+from .services import async_setup_services
 from .store import SyncvitaStore
 
 if TYPE_CHECKING:
@@ -29,7 +30,8 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the Syncvita integration."""
+    """Register the actions of the integration."""
+    async_setup_services(hass)
     return True
 
 

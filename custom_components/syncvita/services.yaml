@@ -1,0 +1,53 @@
+send_value:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: syncvita
+    measure:
+      required: true
+      selector:
+        select:
+          translation_key: measure
+          options:
+            - weight
+            - body_fat
+            - heart_rate
+            - blood_oxygen
+            - blood_sugar
+            - hydration
+    value:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 10000
+          step: any
+          mode: box
+    measured_at:
+      selector:
+        datetime:
+backfill:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: syncvita
+    start:
+      required: true
+      selector:
+        date:
+    measures:
+      selector:
+        select:
+          translation_key: measure
+          multiple: true
+          options:
+            - weight
+            - body_fat
+            - heart_rate
+            - blood_oxygen
+            - blood_sugar
+            - hydration

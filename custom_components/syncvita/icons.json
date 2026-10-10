@@ -1,0 +1,33 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "export_active": {
+        "default": "mdi:cloud-check-outline",
+        "state": { "off": "mdi:cloud-off-outline" }
+      }
+    },
+    "button": {
+      "process_queue": { "default": "mdi:send-clock-outline" }
+    },
+    "event": {
+      "workout": { "default": "mdi:run" },
+      "sleep": { "default": "mdi:sleep" }
+    },
+    "sensor": {
+      "last_transfer": { "default": "mdi:cloud-upload-outline" },
+      "sent_values": { "default": "mdi:counter" },
+      "queue": { "default": "mdi:tray-full" },
+      "last_error": { "default": "mdi:alert-circle-outline" },
+      "rate_limit_remaining": { "default": "mdi:speedometer" },
+      "last_upload": { "default": "mdi:cellphone-arrow-down" },
+      "stored_values": { "default": "mdi:database-outline" },
+      "sleep_last_night": { "default": "mdi:sleep" },
+      "last_workout": { "default": "mdi:run" },
+      "workouts_today": { "default": "mdi:dumbbell" }
+    }
+  },
+  "services": {
+    "send_value": { "service": "mdi:cloud-upload-outline" },
+    "backfill": { "service": "mdi:history" }
+  }
+}
